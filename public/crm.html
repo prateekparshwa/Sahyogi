@@ -1,0 +1,44 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Mock CRM</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&display=swap">
+<style>
+/* Layout: a back-office screen. Counters, then open tickets, then a live event feed, all refreshing every 2 seconds. */
+:root{--bg:#f1f3f6;--card:#fff;--ink:#17202a;--mute:#5f6b78;--line:#dde2e8;--brand:#2b4a8b;--ok:#146c43;--ok-bg:#dff3e7;--warn:#a85a00;--warn-bg:#fdf0dc;--bad:#b3261e;--bad-bg:#fbe5e3;--tile:#eef1f5}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f141a;--card:#171e26;--ink:#e6ecf2;--mute:#97a4b2;--line:#27313c;--brand:#8fb0ff;--ok:#74d9a0;--ok-bg:#15341f;--warn:#f0b35a;--warn-bg:#3a2a10;--bad:#ff8f86;--bad-bg:#3d1d1a;--tile:#1e2730;color-scheme:dark}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:14px/1.45 Manrope,system-ui,sans-serif;padding:0 max(16px,env(safe-area-inset-left,0px)) 40px}
+.wrap{max-width:1000px;margin:0 auto}
+header{display:flex;align-items:center;gap:10px;flex-wrap:wrap;padding:16px 0}
+h1{font-size:20px;margin:0;font-weight:800;flex:1}h1 small{display:block;font-size:12px;color:var(--mute);font-weight:600}
+.pill{font-size:12px;font-weight:800;padding:4px 10px;border-radius:99px;background:var(--ok-bg);color:var(--ok)}.pill.bad{background:var(--bad-bg);color:var(--bad)}.pill.warn{background:var(--warn-bg);color:var(--warn)}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px}
+.stat{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px}.stat i{display:block;font-style:normal;font-size:12px;color:var(--mute)}.stat b{font-size:24px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:14px}
+h2{font-size:15px;margin:0 0 10px}
+.scroll{overflow-x:auto}table{width:100%;border-collapse:collapse;min-width:560px}th,td{text-align:left;padding:8px 10px;border-top:1px solid var(--line);vertical-align:top}th{font-size:12px;color:var(--mute);border-top:0}
+.st{font-size:11px;font-weight:800;padding:3px 8px;border-radius:6px;white-space:nowrap;background:var(--tile)}.st.open{background:var(--bad-bg);color:var(--bad)}.st.replacement_scheduled{background:var(--warn-bg);color:var(--warn)}.st.awaiting_merchant_confirmation{background:var(--warn-bg);color:var(--warn)}.st.closed{background:var(--ok-bg);color:var(--ok)}
+.ev{display:flex;gap:10px;padding:8px 0;border-top:1px solid var(--line)}.ev time{color:var(--mute);white-space:nowrap;font-variant-numeric:tabular-nums}.ev.new{animation:fl 1.6s}
+@keyframes fl{from{background:var(--warn-bg)}to{background:transparent}}
+.k{font-weight:800;font-size:11px;padding:2px 7px;border-radius:5px;background:var(--tile);align-self:flex-start;white-space:nowrap}
+.k.write_ok,.k.ticket_closed{background:var(--ok-bg);color:var(--ok)}.k.write_rejected,.k.outage,.k.ticket_escalated{background:var(--bad-bg);color:var(--bad)}.k.duplicate_blocked,.k.ticket_delivered{background:var(--warn-bg);color:var(--warn)}
+.note{color:var(--mute);font-size:12px}
+@media (prefers-reduced-motion:reduce){.ev.new{animation:none}}
+</style></head><body><div class="wrap">
+<header><h1>Mock CRM<small>Demo system standing in for the real CRM. Synthetic data only.</small></h1><span class="pill" id="state">Connecting</span><span class="pill warn" id="store"></span></header>
+<div class="stats"><div class="stat"><i>Day</i><b id="day">-</b></div><div class="stat"><i>Open tickets</i><b id="open">-</b></div><div class="stat"><i>Writes accepted from Sahyogi</i><b id="writes">-</b></div><div class="stat"><i>Writes rejected (outage)</i><b id="rej">-</b></div><div class="stat"><i>Tickets closed with evidence</i><b id="closed">-</b></div></div>
+<div class="card"><h2>Open tickets</h2><div class="scroll"><table><thead><tr><th>Ticket</th><th>Shop</th><th>Issue</th><th>Status</th><th>Days open</th><th>History</th></tr></thead><tbody id="tickets"></tbody></table></div></div>
+<div class="card"><h2>Closed tickets</h2><div id="closedList" class="note">None yet.</div></div>
+<div class="card"><h2>Live activity</h2><div id="events"></div></div>
+</div>
+<script>
+const $=id=>document.getElementById(id);const esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+let seen=new Set(),first=true;
+async function tick(){try{const r=await fetch("/api/crm?t="+Date.now());if(!r.ok)throw 0;const j=await r.json();
+ $("state").textContent=j.outage?"UNAVAILABLE":"Online";$("state").className="pill"+(j.outage?" bad":"");
+ $("store").textContent=j.store==="redis"?"Storage: persistent":"Storage: temporary";$("store").className="pill"+(j.store==="redis"?"":" warn");
+ const tk=Object.values(j.shops).filter(s=>s.open_ticket).sort((a,b)=>b.open_ticket.opened_days_ago-a.open_ticket.opened_days_ago);
+ $("day").textContent=j.day;$("open").textContent=tk.length;$("writes").textContent=j.writes;$("rej").textContent=j.rejected;$("closed").textContent=j.closed.length;
+ $("tickets").innerHTML=tk.map(s=>{const t=s.open_ticket;return `<tr><td><b>${esc(t.id)}</b></td><td>${esc(s.name)}</td><td>${esc(t.issue)}</td><td><span class="st ${esc(t.status)}">${esc(t.status.replace(/_/g," ").toUpperCase())}</span></td><td>${t.opened_days_ago}</td><td class="note">${esc((t.history||[]).slice(-2).join(" | "))}</td></tr>`}).join("")||`<tr><td colspan="6" class="note">No open tickets.</td></tr>`;
+ $("closedList").innerHTML=j.closed.length?j.closed.map(c=>`<div class="ev"><span class="k ticket_closed">CLOSED</span><div><b>${esc(c.id)}</b> ${esc(c.shopName)}, ${esc(c.issue)}<div class="note">Evidence: ticket ${esc(c.evidence.ticket_state)}, merchant said "${esc(c.evidence.merchant_reply)}", day ${c.evidence.closed_on_day}</div></div></div>`).join(""):"None yet.";
+ $("events").innerHTML=j.events.map(e=>{const k=e.t+e.kind+e.msg,n=!first&&!seen.has(k);seen.add(k);return `<div class="ev${n?" new":""}"><time>${new Date(e.t).toLocaleTimeString("en-GB")}</time><span class="k ${esc(e.kind)}">${esc(e.kind.replace(/_/g," ").toUpperCase())}</span><div>${e.shopName?`<b>${esc(e.shopName)}</b>: `:""}${esc(e.msg)}</div></div>`}).join("")||'<div class="note">No activity yet.</div>';
+ first=false}catch(e){$("state").textContent="No connection";$("state").className="pill bad"}}
+tick();setInterval(tick,2000);
+</script></body></html>

@@ -1,0 +1,949 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Sahyogi</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Noto+Sans+Kannada:wght@400;600&family=Noto+Sans+Devanagari:wght@400;600&display=swap">
+<style>
+/* Layout: one narrow column like a field exec's phone; ranked list, then a shop with brief and note steps. */
+:root{--bg:#f4f5f2;--card:#ffffff;--ink:#14201c;--mute:#5d6b65;--line:#dde2dd;--brand:#0b6b57;--brand-ink:#ffffff;--soft:#e3f1ec;--warn:#a85a00;--warn-bg:#fdf0dc;--bad:#b3261e;--bad-bg:#fbe5e3;--ok:#146c43;--ok-bg:#dff3e7;--tile:#eef1ee}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101613;--card:#18211d;--ink:#e8efeb;--mute:#9aa9a2;--line:#2a3731;--brand:#3fbf9f;--brand-ink:#06231b;--soft:#173229;--warn:#f0b35a;--warn-bg:#3a2a10;--bad:#ff8f86;--bad-bg:#3d1d1a;--ok:#74d9a0;--ok-bg:#15341f;--tile:#1f2b26;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#101613;--card:#18211d;--ink:#e8efeb;--mute:#9aa9a2;--line:#2a3731;--brand:#3fbf9f;--brand-ink:#06231b;--soft:#173229;--warn:#f0b35a;--warn-bg:#3a2a10;--bad:#ff8f86;--bad-bg:#3d1d1a;--ok:#74d9a0;--ok-bg:#15341f;--tile:#1f2b26;color-scheme:dark}
+*{box-sizing:border-box}[hidden]{display:none!important}
+body{background:var(--bg);color:var(--ink);font:15px/1.45 Manrope,system-ui,sans-serif;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
+.kn{font-family:"Noto Sans Kannada",Manrope,sans-serif}.hi{font-family:"Noto Sans Devanagari",Manrope,sans-serif}
+.wrap{max-width:560px;margin:0 auto}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding:14px 0 10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;border-bottom:1px solid var(--line)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+h1{font-size:22px;font-weight:800;margin:0;letter-spacing:-.01em;flex:1}
+h1 small{display:block;font-size:12px;font-weight:600;color:var(--mute);letter-spacing:0}
+h2{font-size:17px;margin:0 0 10px}
+.chip{font-size:12px;font-weight:700;padding:4px 10px;border-radius:99px;background:var(--soft);color:var(--brand)}
+.chip.warn{background:var(--warn-bg);color:var(--warn)}.chip.bad{background:var(--bad-bg);color:var(--bad)}
+button{font:inherit;font-weight:700;border:0;border-radius:10px;padding:11px 14px;cursor:pointer;background:var(--soft);color:var(--brand)}
+button.primary{background:var(--brand);color:var(--brand-ink);width:100%}
+button:disabled{opacity:.5;cursor:default}
+button:focus-visible,select:focus-visible,textarea:focus-visible,input:focus-visible,.shop:focus-visible{outline:3px solid var(--brand);outline-offset:2px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px;margin-top:12px}
+.sub{color:var(--mute);font-size:13px}
+.shop{display:flex;gap:12px;cursor:pointer;align-items:flex-start}
+.rank{flex:none;width:30px;height:30px;border-radius:50%;background:var(--soft);color:var(--brand);font-weight:800;display:grid;place-items:center}
+.shop .body{flex:1;min-width:0}.shop b{font-size:16px}
+.shop ul,.why{margin:6px 0 0;padding-left:18px;color:var(--mute);font-size:13px}
+.score{text-align:right;font-weight:800;color:var(--brand);font-size:20px;line-height:1}.score span{display:block;font-size:11px;color:var(--mute);font-weight:600}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.tile{background:var(--tile);border-radius:10px;padding:9px 11px;min-width:0}.tile i{display:block;font-style:normal;font-size:12px;color:var(--mute)}.tile b{font-size:15px}
+.tile.bad b{color:var(--bad)}
+label{font-size:13px;font-weight:700;color:var(--mute);display:block;margin:8px 0 4px}
+select,textarea{width:100%;font:inherit;padding:10px;border-radius:10px;border:1px solid var(--line);background:var(--card);color:var(--ink)}
+textarea{min-height:84px;resize:vertical}
+.row{display:flex;gap:8px;flex-wrap:wrap}.row>button{flex:1}
+.brief{margin-top:10px;padding:12px;border-radius:10px;background:var(--soft);font-size:17px;line-height:1.6}
+.samples{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}.samples button{font-size:13px;padding:7px 11px;background:var(--tile);color:var(--ink);font-weight:600}
+.act{display:flex;gap:10px;align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)}
+.act input{width:20px;height:20px;margin-top:2px;accent-color:var(--brand)}
+.tag{font-size:11px;font-weight:800;padding:3px 8px;border-radius:6px;white-space:nowrap}
+.tag.done{background:var(--ok-bg);color:var(--ok)}.tag.pending{background:var(--warn-bg);color:var(--warn)}.tag.duplicate{background:var(--tile);color:var(--mute)}.tag.blocked{background:var(--bad-bg);color:var(--bad)}
+.res{display:flex;gap:10px;align-items:flex-start;padding:8px 0;border-top:1px solid var(--line)}
+.note{background:var(--warn-bg);color:var(--ink);border-radius:10px;padding:10px 12px;margin-top:10px}
+.sheet{position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:20;display:flex;align-items:flex-end;justify-content:center}
+.sheet[hidden]{display:none!important}
+.sheet .in{background:var(--card);width:100%;max-width:560px;border-radius:18px 18px 0 0;padding:16px 16px calc(16px + env(safe-area-inset-bottom,0px));display:grid;gap:8px;max-height:85vh;overflow:auto}
+pre{white-space:pre-wrap;font:13px/1.5 Manrope,sans-serif;margin:0}
+.aud{font-size:13px;padding:7px 0;border-top:1px solid var(--line)}.aud time{color:var(--mute);margin-right:6px}
+.toggle{display:flex;gap:8px;align-items:center;font-weight:600;color:var(--ink);margin:10px 0 0}
+.toggle input{width:18px;height:18px;accent-color:var(--brand)}
+.back{background:none;padding:12px 0 0;color:var(--brand)}
+@media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s}}
+</style>
+</head><body><div class="wrap">
+<header><h1>Sahyogi<small>AI teammate for Paytm field executives</small></h1><span class="chip" id="day"></span><span class="chip" id="crm" hidden></span><span class="chip" id="mode"></span><button id="menuBtn" aria-label="Menu">Menu</button></header>
+<main id="app"></main>
+</div>
+<div id="sheet" class="sheet" hidden></div>
+<script>
+const SHOPS=[
+  {
+    "id": "S01",
+    "name": "Sharma Kirana",
+    "owner": "Rakesh Sharma",
+    "area": "HSR Layout",
+    "language": "kn",
+    "phone_masked": "98XXXX2841",
+    "device": {
+      "model": "Soundbox 4",
+      "status": "speaker_fault",
+      "offline_days": 6
+    },
+    "payments_prev7": 52000,
+    "payments_last7": 31200,
+    "open_ticket": {
+      "id": "T-1042",
+      "issue": "Speaker not working",
+      "opened_days_ago": 6,
+      "status": "open"
+    },
+    "promise_due": {
+      "text": "Come back with an update on the speaker",
+      "due_day": 1
+    },
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -6: merchant said the speaker is dead, ticket raised, promised an update",
+    "status": "healthy"
+  },
+  {
+    "id": "S02",
+    "name": "Lakshmi Stores",
+    "owner": "Lakshmi Devi",
+    "area": "BTM Layout",
+    "language": "kn",
+    "phone_masked": "98XXXX9768",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 22000,
+    "payments_last7": 20900,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -7: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S03",
+    "name": "Fresh Basket",
+    "owner": "Imran Pasha",
+    "area": "Indiranagar",
+    "language": "hi",
+    "phone_masked": "98XXXX1542",
+    "device": {
+      "model": "Soundbox 4",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 30000,
+    "payments_last7": 21000,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -20: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S04",
+    "name": "Annapurna Tiffins",
+    "owner": "Suresh Gowda",
+    "area": "Jayanagar",
+    "language": "kn",
+    "phone_masked": "98XXXX9619",
+    "device": {
+      "model": "Pebble Soundbox",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 60000,
+    "payments_last7": 64800,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -5: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S05",
+    "name": "Gupta Medicals",
+    "owner": "Anil Gupta",
+    "area": "Koramangala",
+    "language": "hi",
+    "phone_masked": "98XXXX7601",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "offline",
+      "offline_days": 3
+    },
+    "payments_prev7": 44000,
+    "payments_last7": 33000,
+    "open_ticket": {
+      "id": "T-1051",
+      "issue": "Device offline",
+      "opened_days_ago": 3,
+      "status": "open"
+    },
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -13: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S06",
+    "name": "City Mobiles",
+    "owner": "Farhan Ali",
+    "area": "HSR Layout",
+    "language": "hi",
+    "phone_masked": "98XXXX5039",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 39000,
+    "payments_last7": 40560,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -16: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S07",
+    "name": "Ganesh Bakery",
+    "owner": "Ganesh Rao",
+    "area": "BTM Layout",
+    "language": "kn",
+    "phone_masked": "98XXXX9968",
+    "device": {
+      "model": "Soundbox 4",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 51000,
+    "payments_last7": 57120,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -8: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S08",
+    "name": "Royal Salon",
+    "owner": "Pooja Nair",
+    "area": "Indiranagar",
+    "language": "en",
+    "phone_masked": "98XXXX4340",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 36000,
+    "payments_last7": 36000,
+    "open_ticket": null,
+    "promise_due": {
+      "text": "Share card-payment offer",
+      "due_day": 1
+    },
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -15: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S09",
+    "name": "Sri Devi Flowers",
+    "owner": "Devi Prasad",
+    "area": "Jayanagar",
+    "language": "kn",
+    "phone_masked": "98XXXX9703",
+    "device": {
+      "model": "Pebble Soundbox",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 15000,
+    "payments_last7": 14250,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -9: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S10",
+    "name": "Metro Stationers",
+    "owner": "Vikram Jain",
+    "area": "Koramangala",
+    "language": "hi",
+    "phone_masked": "98XXXX7020",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 27000,
+    "payments_last7": 29160,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -10: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S11",
+    "name": "Balaji Hardware",
+    "owner": "Balaji Reddy",
+    "area": "HSR Layout",
+    "language": "kn",
+    "phone_masked": "98XXXX5315",
+    "device": {
+      "model": "Card Soundbox",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 44000,
+    "payments_last7": 41800,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -15: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S12",
+    "name": "Cafe Aroma",
+    "owner": "Neha Kapoor",
+    "area": "BTM Layout",
+    "language": "en",
+    "phone_masked": "98XXXX6183",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 38000,
+    "payments_last7": 24500,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -6: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S13",
+    "name": "Mahesh Provision",
+    "owner": "Mahesh Kumar",
+    "area": "Indiranagar",
+    "language": "kn",
+    "phone_masked": "98XXXX9942",
+    "device": {
+      "model": "Card Soundbox",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 33000,
+    "payments_last7": 33000,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -9: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S14",
+    "name": "New Style Tailors",
+    "owner": "Salim Khan",
+    "area": "Jayanagar",
+    "language": "hi",
+    "phone_masked": "98XXXX7139",
+    "device": {
+      "model": "Soundbox 4",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 15000,
+    "payments_last7": 13800,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -12: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S15",
+    "name": "Green Leaf Juice",
+    "owner": "Arjun Menon",
+    "area": "Koramangala",
+    "language": "en",
+    "phone_masked": "98XXXX4225",
+    "device": {
+      "model": "Soundbox 4",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 33000,
+    "payments_last7": 36960,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -13: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S16",
+    "name": "Kaveri Sweets",
+    "owner": "Kaveri Bai",
+    "area": "HSR Layout",
+    "language": "kn",
+    "phone_masked": "98XXXX1795",
+    "device": {
+      "model": "Soundbox 4",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 42000,
+    "payments_last7": 45360,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -6: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S17",
+    "name": "Star Electricals",
+    "owner": "Prakash Shetty",
+    "area": "BTM Layout",
+    "language": "kn",
+    "phone_masked": "98XXXX6492",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 26000,
+    "payments_last7": 26000,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": true
+    },
+    "last_visit": "Day -7: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S18",
+    "name": "Daily Needs Mart",
+    "owner": "Rohit Verma",
+    "area": "Indiranagar",
+    "language": "hi",
+    "phone_masked": "98XXXX9161",
+    "device": {
+      "model": "Card Soundbox",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 44000,
+    "payments_last7": 41800,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -18: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S19",
+    "name": "Pearl Optical",
+    "owner": "Meera Iyer",
+    "area": "Jayanagar",
+    "language": "en",
+    "phone_masked": "98XXXX1623",
+    "device": {
+      "model": "Soundbox 4",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 54000,
+    "payments_last7": 49680,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -18: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S20",
+    "name": "Ramesh Chats",
+    "owner": "Ramesh Yadav",
+    "area": "Koramangala",
+    "language": "hi",
+    "phone_masked": "98XXXX9024",
+    "device": {
+      "model": "Pebble Soundbox",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 15000,
+    "payments_last7": 15600,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -3: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S21",
+    "name": "Siddhi Pooja Items",
+    "owner": "Siddhi Patil",
+    "area": "HSR Layout",
+    "language": "kn",
+    "phone_masked": "98XXXX5628",
+    "device": {
+      "model": "Pebble Soundbox",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 20000,
+    "payments_last7": 21600,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -4: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S22",
+    "name": "Hotel Udupi Grand",
+    "owner": "Narayan Hegde",
+    "area": "BTM Layout",
+    "language": "kn",
+    "phone_masked": "98XXXX1819",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 22000,
+    "payments_last7": 20900,
+    "open_ticket": {
+      "id": "T-1049",
+      "issue": "Settlement delayed",
+      "opened_days_ago": 2,
+      "status": "open"
+    },
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -12: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S23",
+    "name": "Happy Kids Toys",
+    "owner": "Anita Singh",
+    "area": "Indiranagar",
+    "language": "hi",
+    "phone_masked": "98XXXX8452",
+    "device": {
+      "model": "Pebble Soundbox",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 58000,
+    "payments_last7": 58000,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -9: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S24",
+    "name": "Tasty Bites",
+    "owner": "Fatima Begum",
+    "area": "Jayanagar",
+    "language": "hi",
+    "phone_masked": "98XXXX8561",
+    "device": {
+      "model": "Card Soundbox",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 59000,
+    "payments_last7": 54280,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -17: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S25",
+    "name": "Venkat Cycles",
+    "owner": "Venkatesh M",
+    "area": "Koramangala",
+    "language": "kn",
+    "phone_masked": "98XXXX7087",
+    "device": {
+      "model": "Soundbox 4",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 34000,
+    "payments_last7": 34000,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -14: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S26",
+    "name": "Moon Dry Cleaners",
+    "owner": "Chandan Das",
+    "area": "HSR Layout",
+    "language": "hi",
+    "phone_masked": "98XXXX7214",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 26000,
+    "payments_last7": 27040,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -6: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S27",
+    "name": "Book Nook",
+    "owner": "Shruti Rao",
+    "area": "BTM Layout",
+    "language": "en",
+    "phone_masked": "98XXXX4402",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 60000,
+    "payments_last7": 64800,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -12: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S28",
+    "name": "Om Sai Pharmacy",
+    "owner": "Sai Kumar",
+    "area": "Indiranagar",
+    "language": "kn",
+    "phone_masked": "98XXXX6029",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 27000,
+    "payments_last7": 29160,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -11: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S29",
+    "name": "Aqua Pure Water",
+    "owner": "Jose Thomas",
+    "area": "Jayanagar",
+    "language": "en",
+    "phone_masked": "98XXXX8737",
+    "device": {
+      "model": "Card Soundbox",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 16000,
+    "payments_last7": 15200,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -9: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S30",
+    "name": "Bangalore Biryani House",
+    "owner": "Hamid Sheikh",
+    "area": "Koramangala",
+    "language": "hi",
+    "phone_masked": "98XXXX6961",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 41000,
+    "payments_last7": 45920,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -17: routine check, no issues",
+    "status": "healthy"
+  }
+];
+const LANG={en:"English",hi:"Hindi (Devanagari script)",kn:"Kannada (Kannada script)"};
+const LNAME={en:"English",hi:"Hindi",kn:"Kannada"};
+const VOICE={en:"en-IN",hi:"hi-IN",kn:"kn-IN"};
+let S,view="list",useAI=true,sarvamOn=false,ui={},rec=null,recChunks=[],crmOn=false,crmStore="";
+function fresh(){S={day:1,shops:Object.fromEntries(JSON.parse(JSON.stringify(SHOPS)).map(s=>[s.id,s])),visited:[],audit:[],actions:{},pending:[],outage:false};ui={};view="list"}
+const esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const $=id=>document.getElementById(id);
+function log(kind,msg,shop){S.audit.push({t:new Date().toLocaleTimeString("en-GB"),day:S.day,kind,shop,msg})}
+const drop=s=>Math.round(100*(s.payments_prev7-s.payments_last7)/Math.max(s.payments_prev7,1));
+function score(s){let p=0,w=[];const t=s.open_ticket;
+ if(t&&["open","replacement_scheduled","awaiting_merchant_confirmation"].includes(t.status)){p+=40+Math.min(t.opened_days_ago,10)*2;w.push(`Open ticket ${t.id} (${t.issue}), ${t.opened_days_ago} days old`)}
+ const pr=s.promise_due;if(pr&&pr.due_day<=S.day){p+=25;w.push(`Promise due: ${pr.text}`)}
+ const d=drop(s);if(d>=25){p+=20;w.push(`Payments down ${d}% week on week`)}
+ if(s.device.status!=="online"){p+=15;w.push(`Device ${s.device.status.replace(/_/g," ")} for ${s.device.offline_days} days`)}
+ if(s.loan.eligible&&s.loan.interested){p+=10;w.push("Eligible for a loan and has shown interest")}else if(s.loan.eligible){p+=3;w.push("Eligible for a loan offer")}
+ return [p,w]}
+function ranked(){return Object.values(S.shops).map(s=>{const [p,w]=score(s);return{...s,score:p,why:w}}).sort((a,b)=>b.score-a.score||a.name.localeCompare(b.name))}
+// ---- offline language
+const OB={en:"{shop}: {issue} for {days} days. Payments are {drop}% lower than last week. Last time you promised: {promise}. Ask about a replacement{loan}.",
+hi:"{shop}: {issue}, {days} दिन से। पेमेंट पिछले हफ्ते से {drop}% कम है। पिछली बार आपने वादा किया था: {promise}। रिप्लेसमेंट के बारे में पूछिए{loan}।",
+kn:"{shop}: {issue}, {days} ದಿನಗಳಿಂದ. ಪಾವತಿ ಕಳೆದ ವಾರಕ್ಕಿಂತ {drop}% ಕಡಿಮೆ ಇದೆ. ಕಳೆದ ಬಾರಿ ನೀವು ಹೇಳಿದ್ದು: {promise}. ರಿಪ್ಲೇಸ್‌ಮೆಂಟ್ ಬಗ್ಗೆ ಕೇಳಿ{loan}."};
+const LB={en:", and mention the loan offer",hi:" और लोन ऑफर बताइए",kn:" ಮತ್ತು ಸಾಲದ ಆಫರ್ ಹೇಳಿ"};
+const L10={"Speaker not working":{hi:"स्पीकर काम नहीं कर रहा",kn:"ಸ್ಪೀಕರ್ ಕೆಲಸ ಮಾಡುತ್ತಿಲ್ಲ"},"Device offline":{hi:"डिवाइस ऑफलाइन है",kn:"ಸಾಧನ ಆಫ್‌ಲೈನ್ ಆಗಿದೆ"},"Settlement delayed":{hi:"सेटलमेंट में देरी",kn:"ಸೆಟಲ್‌ಮೆಂಟ್ ತಡವಾಗಿದೆ"},"Device issue":{hi:"डिवाइस की समस्या",kn:"ಸಾಧನದ ಸಮಸ್ಯೆ"},"Come back with an update on the speaker":{hi:"स्पीकर पर अपडेट लेकर आऊंगा",kn:"ಸ್ಪೀಕರ್ ಬಗ್ಗೆ ಅಪ್‌ಡೇಟ್ ತರುತ್ತೇನೆ"},"Share card-payment offer":{hi:"कार्ड पेमेंट ऑफर बताऊंगा",kn:"ಕಾರ್ಡ್ ಪಾವತಿ ಆಫರ್ ತಿಳಿಸುತ್ತೇನೆ"},"an update":{hi:"अपडेट",kn:"ಅಪ್‌ಡೇಟ್"},"Confirm replacement delivery":{hi:"रिप्लेसमेंट की डिलीवरी कन्फर्म करूंगा",kn:"ರಿಪ್ಲೇಸ್‌ಮೆಂಟ್ ಡೆಲಿವರಿ ಖಚಿತಪಡಿಸುತ್ತೇನೆ"}};
+const loc=(t,l)=>l==="en"?t:(L10[t]&&L10[t][l])||t;
+function offlineBrief(s,l){const t=s.open_ticket;
+ if(!t){return{en:`${s.name}: nothing urgent. Payments are steady. Ask how the device is working.`,hi:`${s.name}: कोई जरूरी मुद्दा नहीं। पेमेंट स्थिर है। डिवाइस के बारे में पूछिए।`,kn:`${s.name}: ತುರ್ತು ಸಮಸ್ಯೆ ಇಲ್ಲ. ಪಾವತಿ ಸ್ಥಿರವಾಗಿದೆ. ಸಾಧನ ಹೇಗಿದೆ ಎಂದು ಕೇಳಿ.`}[l]}
+ const pr=(s.promise_due||{}).text||"an update";
+ return OB[l].replace("{shop}",s.name).replace("{issue}",loc(t.issue,l)).replace("{days}",t.opened_days_ago).replace("{drop}",Math.max(drop(s),0)).replace("{promise}",loc(pr,l)).replace("{loan}",s.loan.eligible?LB[l]:"")}
+const KW={replacement:["replace","new speaker","new one","बदल","रिप्लेस","नया","ಬದಲ","ರಿಪ್ಲೇಸ್","ಹೊಸ"],repair:["repair","fix","ठीक","ಸರಿ"],loan_info:["loan","लोन","कर्ज","ಸಾಲ","ಲೋನ್"],upgrade:["upgrade","card machine","अपग्रेड","ಅಪ್‌ಗ್ರೇಡ್"]};
+const DET={replacement:"Merchant wants a replacement device",repair:"Merchant wants the device repaired",loan_info:"Merchant asked about a loan",upgrade:"Merchant interested in an upgrade"};
+const WHEN=[["tomorrow","tomorrow"],["friday","Friday"],["monday","Monday"],["next week","next week"],["कल","tomorrow"],["ನಾಳೆ","tomorrow"]];
+function offlineExtract(note){const low=note.toLowerCase();const reqs=[];
+ for(const [t,ws] of Object.entries(KW)) if(ws.some(w=>low.includes(w))) reqs.push({type:t,detail:DET[t]});
+ const w=(WHEN.find(([k])=>low.includes(k))||[])[1]||null;
+ if(!reqs.length) return{summary:"Visit note recorded, but the merchant's request is unclear.",requests:[],follow_up:{needed:false,when:null},needs_clarification:true,question:"What did the merchant ask for: a replacement, a repair, a loan, or something else?"};
+ return{summary:reqs.map(r=>r.detail).join("; ")+(w?`. Available ${w}.`:"."),requests:reqs,follow_up:{needed:true,when:w||"next visit"},needs_clarification:false,question:null}}
+// ---- Sarvam via our own /api (key stays on the server)
+async function ask(prompt){if(!useAI||!sarvamOn)return null;
+ try{const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),25000);
+  const r=await fetch("/api/chat",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({prompt}),signal:ctl.signal});clearTimeout(to);
+  if(!r.ok)throw new Error("HTTP "+r.status);const j=await r.json();return (j.text||"").trim()||null}
+ catch(e){log("llm_fallback","Sarvam chat failed, used offline rules ("+e.message+")");return null}}
+function facts(s){const t=s.open_ticket;return{shop:s.name,owner:s.owner,ticket:t?t.issue:null,ticket_days_open:t?t.opened_days_ago:null,device_status:s.device.status,payment_change_percent:-drop(s),promise_from_last_visit:s.promise_due?s.promise_due.text:null,loan_eligible:s.loan.eligible,last_visit:s.last_visit}}
+async function makeBrief(s,l){
+ const p=`You are Sahyogi, an AI teammate for a Paytm field sales executive in Bengaluru. Write a pre-visit brief that will be READ ALOUD, under 45 words, plain spoken sentences.
+Rules: use ONLY the facts in the JSON. Never invent numbers, dates or promises. Say what is wrong first, then what the executive promised last time, then ONE thing to offer. Do not claim a cause; a payment drop and a device fault are separate observations. Write in the requested language and script. No emojis, no markdown. Output only the brief.
+Language: ${LANG[l]}
+Facts: ${JSON.stringify(facts(s))}`;
+ const t=await ask(p);return t?{text:t,src:"Sarvam"}:{text:offlineBrief(s,l),src:"Offline rules"}}
+async function extract(note,s){const t=s.open_ticket;
+ const p=`You turn an executive's spoken visit note into structured facts for a CRM. Return ONLY valid JSON of this shape:
+{"summary":"one sentence in English","requests":[{"type":"replacement|repair|loan_info|upgrade|callback|other","detail":"string"}],"follow_up":{"needed":true,"when":"string or null"},"needs_clarification":false,"question":"ask ONE short question if the note is unclear, else null"}
+Rules: use only what the note says. Do not guess the merchant's intent. If the note does not say what the merchant wants, set needs_clarification true and ask one question. The note may be in English, Hindi or Kannada. Answer in English JSON.
+Shop: ${s.name} (open ticket: ${t?t.issue:"none"})
+Note: """${note}"""`;
+ const raw=await ask(p);
+ if(raw){try{const d=JSON.parse(raw.match(/\{[\s\S]*\}/)[0]);if(Array.isArray(d.requests)&&"needs_clarification" in d&&d.follow_up)return{ex:d,src:"Sarvam"}}catch(e){log("llm_fallback","Claude returned unreadable JSON, used offline rules")}}
+ return{ex:offlineExtract(note),src:"Offline rules"}}
+function propose(s,ex){const a=[],t=s.open_ticket,k=new Set(ex.requests.map(r=>r.type));
+ if(k.has("replacement")||k.has("repair"))a.push({key:`${s.id}:ticket:${t?t.id:"new"}`,type:"ticket_update",label:t?`Update existing ticket ${t.id}: replacement requested`:"Open a new ticket: replacement requested",needs_approval:true});
+ if(k.has("loan_info")){if(s.loan.eligible)a.push({key:`${s.id}:loan_link`,type:"loan_link",label:"Send the loan information link to the merchant (SMS)",needs_approval:true});
+  else a.push({key:`${s.id}:loan_blocked`,type:"blocked",label:"Merchant asked about a loan, but is not eligible. No link will be sent.",needs_approval:false})}
+ if(ex.follow_up&&ex.follow_up.needed)a.push({key:`${s.id}:revisit:${S.day}`,type:"revisit",label:`Book a revisit: ${ex.follow_up.when||"next visit"}`,needs_approval:false});
+ a.push({key:`${s.id}:crm:${S.day}`,type:"crm_entry",label:"Save the visit note to the CRM",needs_approval:false});return a}
+function execute(id,act,ex){const s=S.shops[id],key=act.key;
+ if(S.actions[key]&&S.actions[key].state==="done"){log("duplicate_blocked","Skipped duplicate: "+act.label,id);return{key,state:"duplicate",label:act.label}}
+ if(act.type==="blocked")return{key,state:"blocked",label:act.label};
+ if(S.outage){S.actions[key]={state:"pending",act,shop:id,ex};if(!S.pending.includes(key))S.pending.push(key);log("write_pending","CRM unavailable. Kept pending: "+act.label,id);return{key,state:"pending",label:act.label}}
+ const t=s.open_ticket;
+ if(act.type==="ticket_update"){if(t){t.status="replacement_scheduled";(t.history=t.history||[]).push(`Day ${S.day}: replacement approved by executive`)}else{s.open_ticket={id:"T-"+(1100+Object.keys(S.actions).length),issue:"Device issue",opened_days_ago:0,status:"replacement_scheduled"}}s.status="replacement_scheduled"}
+ else if(act.type==="loan_link")s.loan.interested=true;
+ else if(act.type==="revisit")s.promise_due={text:"Confirm replacement delivery",due_day:S.day+1};
+ else if(act.type==="crm_entry")s.last_visit=`Day ${S.day}: ${ex.summary}`;
+ S.actions[key]={state:"done",act,shop:id};const i=S.pending.indexOf(key);if(i>=0)S.pending.splice(i,1);
+ if(!S.visited.includes(id))S.visited.push(id);log("action_done",act.label,id);return{key,state:"done",label:act.label}}
+// ---- views
+const SAMPLES={clear:"Speaker is dead. He wants a replacement and is also asking about a loan. Available tomorrow.",hindi:"दुकानदार को नया स्पीकर चाहिए, पुराना बदल दो। कल मिलेंगे।",unclear:"Met the owner, had tea, he said things are slow lately.",loan:"He is asking about a loan, no device problem. Visit again Friday."};
+function renderHead(){const cc=$("crm");cc.hidden=!crmOn;if(crmOn){cc.textContent=crmStore==="redis"?"CRM connected":"CRM (temporary)";cc.className="chip"+(crmStore==="redis"?"":" warn")}$("day").textContent="Day "+S.day;const m=$("mode");m.textContent=useAI&&sarvamOn?"Sarvam on":"Offline rules";m.className="chip"+(useAI&&sarvamOn?"":" warn");
+ if(S.outage){m.textContent="CRM outage";m.className="chip bad"}}
+function render(){renderHead();const a=$("app");a.innerHTML=view==="list"?listHTML():shopHTML(view);bind()}
+function listHTML(){return `<h2 style="margin-top:16px">Today's visits</h2><div class="sub">Ranked by plain rules. Tap a shop to see why.</div>`+ranked().map((s,i)=>`<div class="card shop" tabindex="0" role="button" data-open="${s.id}"><div class="rank">${i+1}</div><div class="body"><b>${esc(s.name)}</b><div class="sub">${esc(s.owner)} · ${esc(s.area)}${s.visited||S.visited.includes(s.id)?' · <span class="tag done">VISITED</span>':''}</div>${s.why.length?`<ul>${s.why.slice(0,2).map(w=>`<li>${esc(w)}</li>`).join("")}</ul>`:""}</div><div class="score">${s.score}<span>score</span></div></div>`).join("")}
+function shopHTML(id){const s=S.shops[id],[p,w]=score(s),t=s.open_ticket,u=ui[id]||(ui[id]={lang:s.language});const d=drop(s);
+ const dev=s.device.status==="online"?`${s.device.model}: online`:`${s.device.model}: ${s.device.status.replace(/_/g," ")}`;
+ let h=`<button class="back" data-back>← All shops</button><div class="card"><b style="font-size:19px">${esc(s.name)}</b><div class="sub">${esc(s.owner)} · ${esc(s.area)} · ${esc(s.phone_masked)}</div>
+ <div class="grid"><div class="tile ${d>=25?"bad":""}"><i>Payments vs last week</i><b>${d>0?"-"+d:"+"+Math.abs(d)}%</b></div><div class="tile"><i>Device</i><b>${esc(dev)}</b></div><div class="tile"><i>Ticket</i><b>${t?esc(t.id)+" ("+esc(t.status.replace(/_/g," "))+")":"None"}</b></div><div class="tile"><i>Loan</i><b>${s.loan.eligible?(s.loan.interested?"Interested":"Eligible"):"Not eligible"}</b></div></div>
+ ${w.length?`<b class="sub">Why this shop</b><ul class="why">${w.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}<div class="sub" style="margin-top:8px">Last visit: ${esc(s.last_visit)}</div></div>`;
+ if(t&&t.status==="awaiting_merchant_confirmation")h+=`<div class="card"><h2>Next-day check</h2><div class="sub">Ticket ${esc(t.id)} shows the replacement as delivered. Sahyogi does not close it yet. It asks the merchant first.</div>${ui[id+"c"]?`<div class="note">${esc(ui[id+"c"])}</div>`:`<div class="row" style="margin-top:10px"><button data-conf="1">Merchant: "Yes, the speaker works"</button><button data-conf="0">Merchant: "Still not working"</button></div>`}</div>`;
+ const lc=u.lang;
+ h+=`<div class="card"><h2>1. Pre-visit brief</h2><label for="lang">Language</label><select id="lang"><option value="kn"${lc==="kn"?" selected":""}>Kannada</option><option value="hi"${lc==="hi"?" selected":""}>Hindi</option><option value="en"${lc==="en"?" selected":""}>English</option></select>
+ <div class="row" style="margin-top:10px"><button class="primary" data-brief style="flex:2" ${u.busy?"disabled":""}>${u.busy==="brief"?"Writing...":"Get brief"}</button><button data-speak ${u.brief?"":"disabled"}>Play aloud</button></div>
+ ${u.brief?`<div class="brief ${lc}">${esc(u.brief.text)}</div><div class="sub" style="margin-top:6px">Written by: ${esc(u.brief.src)}${u.speakMsg?" · "+esc(u.speakMsg):""}</div>`:""}</div>`;
+ h+=`<div class="card"><h2>2. After the visit</h2><label for="note">Visit note (speak, type or paste; English, Hindi or Kannada)</label><button data-mic style="width:100%;margin-bottom:8px;${rec?'background:var(--bad-bg);color:var(--bad)':''}">${rec?"Stop recording":"Tap to speak"}</button>${u.micMsg?`<div class="sub" style="margin-bottom:6px">${esc(u.micMsg)}</div>`:""}<textarea id="note" placeholder="What did the merchant say?">${esc(u.note||"")}</textarea>
+ <div class="samples">${Object.entries({clear:"Clear note",hindi:"Hindi note",unclear:"Unclear note",loan:"Loan, no device issue"}).map(([k,v])=>`<button data-sample="${k}">${v}</button>`).join("")}</div>
+ <button class="primary" data-extract ${u.busy?"disabled":""}>${u.busy==="ex"?"Reading note...":"Turn note into facts"}</button>`;
+ if(u.ex){const ex=u.ex.ex;h+=`<div class="note"><b>What I understood</b> <span class="sub">(${esc(u.ex.src)})</span><br>${esc(ex.summary)}</div>`;
+  if(ex.needs_clarification)h+=`<div class="note" style="background:var(--bad-bg)"><b>I need one answer first:</b> ${esc(ex.question)}<div class="sub">Nothing was written to the CRM.</div></div>`;
+  else{h+=`<div class="sub" style="margin-top:10px"><b>Approve what I should do</b></div>`+u.acts.map(a=>`<label class="act" style="margin:0;color:var(--ink);font-weight:600"><input type="checkbox" data-key="${esc(a.key)}" ${a.type==="blocked"?"disabled":"checked"}><span>${esc(a.label)}${a.needs_approval?' <span class="sub">(needs your approval)</span>':""}</span></label>`).join("")+`<button class="primary" data-approve style="margin-top:10px">Approve and run</button>`}}
+ if(u.res)h+=u.res.map(r=>`<div class="res"><span class="tag ${r.state}">${{done:"DONE",pending:"PENDING",duplicate:"DUPLICATE PREVENTED",blocked:"BLOCKED"}[r.state]}</span><span>${esc(r.label)}</span></div>`).join("");
+ return h+"</div>"}
+function bind(){document.querySelectorAll("[data-open]").forEach(e=>{const go=()=>{view=e.dataset.open;render();scrollTo(0,0)};e.onclick=go;e.onkeydown=ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();go()}}});
+ const b=document.querySelector("[data-back]");if(b)b.onclick=()=>{view="list";render()};
+ if(view==="list")return;const id=view,s=S.shops[id],u=ui[id];
+ const L=$("lang");if(L)L.onchange=()=>{u.lang=L.value;u.brief=null;render()};
+ const N=$("note");if(N)N.oninput=()=>{u.note=N.value};
+ document.querySelectorAll("[data-sample]").forEach(e=>e.onclick=()=>{u.note=SAMPLES[e.dataset.sample];u.ex=null;u.res=null;render()});
+ const gb=document.querySelector("[data-brief]");if(gb)gb.onclick=async()=>{u.busy="brief";render();u.brief=await makeBrief(s,u.lang);u.busy=null;u.speakMsg="";log("brief",`Brief generated (${u.brief.src}, ${u.lang})`,id);render()};
+ const sp=document.querySelector("[data-speak]");if(sp)sp.onclick=()=>speak(u);
+ const mc=document.querySelector("[data-mic]");if(mc)mc.onclick=()=>toggleMic(u);
+ const ge=document.querySelector("[data-extract]");if(ge)ge.onclick=async()=>{const n=(u.note||"").trim();if(n.length<3)return;u.busy="ex";u.res=null;render();const r=await extract(n,s);u.busy=null;u.ex=r;u.acts=r.ex.needs_clarification?[]:propose(s,r.ex);log("note","Visit note captured. Clarification needed: "+r.ex.needs_clarification,id);render()};
+ const ap=document.querySelector("[data-approve]");if(ap)ap.onclick=async()=>{const keys=[...document.querySelectorAll("[data-key]:checked")].map(e=>e.dataset.key);ap.disabled=true;u.res=[];for(const a of propose(s,u.ex.ex)){if(keys.includes(a.key)||a.type==="blocked")u.res.push(await executeAny(id,a,u.ex.ex))}render()};
+ document.querySelectorAll("[data-conf]").forEach(e=>e.onclick=()=>confirmMerchant(id,e.dataset.conf==="1"))}
+async function speak(u){const l=u.lang;u.speakMsg="Generating voice...";render();
+ try{if(!sarvamOn)throw new Error("offline");const r=await fetch("/api/tts",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({text:u.brief.text,lang:l})});if(!r.ok)throw new Error("HTTP "+r.status);
+  const au=new Audio(URL.createObjectURL(await r.blob()));await au.play();u.speakMsg="Sarvam voice";log("tts","Sarvam voice played ("+l+")",view)}
+ catch(e){const v="speechSynthesis" in window&&speechSynthesis.getVoices().find(x=>x.lang.toLowerCase().startsWith(l));
+  if(v){const m=new SpeechSynthesisUtterance(u.brief.text);m.lang=VOICE[l];m.voice=v;speechSynthesis.cancel();speechSynthesis.speak(m);u.speakMsg="Device voice (Sarvam unavailable)"}
+  else u.speakMsg="Voice unavailable right now. Read the brief on screen."}
+ render()}
+async function toggleMic(u){if(rec){rec.stop();return}
+ try{const st=await navigator.mediaDevices.getUserMedia({audio:true});recChunks=[];rec=new MediaRecorder(st);
+  rec.ondataavailable=e=>recChunks.push(e.data);
+  rec.onstop=async()=>{st.getTracks().forEach(x=>x.stop());const type=(rec.mimeType||"audio/webm").split(";")[0];rec=null;u.micMsg="Transcribing with Sarvam...";render();
+   try{const r=await fetch("/api/stt?lang=unknown",{method:"POST",headers:{"content-type":type},body:new Blob(recChunks,{type})});if(!r.ok)throw new Error("HTTP "+r.status);const j=await r.json();
+    u.note=((u.note?u.note+" ":"")+(j.text||"")).trim();u.ex=null;u.res=null;u.micMsg=j.text?"Transcribed by Sarvam. Check the text, then continue.":"Heard nothing. Try again or use a sample.";log("stt","Voice note transcribed by Sarvam")}
+   catch(e){u.micMsg="Could not transcribe. Type the note or use a sample."}render()};
+  rec.start();u.micMsg="Recording... tap again to stop.";render()}
+ catch(e){u.micMsg="Microphone blocked. Allow it in the browser, or type the note.";render()}}
+function confirmLocal(id,yes){const s=S.shops[id],t=s.open_ticket;if(!t||t.status!=="awaiting_merchant_confirmation")return;
+ if(yes){const ev={ticket:t.id,ticket_state:"delivered",merchant_reply:"Yes, the speaker works",closed_on_day:S.day};t.status="closed";s.status="resolved";s.promise_due=null;s.open_ticket=null;log("closed",`Issue closed with evidence: ticket ${t.id} delivered and merchant confirmed`,id);ui[id+"c"]="Closed with evidence: "+JSON.stringify(ev)}
+ else{t.status="open";t.opened_days_ago+=1;log("escalated",`Merchant says it still fails. Reopened ${t.id} and escalated to the area manager`,id);ui[id+"c"]="Reopened and escalated to the area manager."}render()}
+function nextLocal(){S.day++;let n=0;for(const s of Object.values(S.shops)){const t=s.open_ticket;if(t&&t.status==="replacement_scheduled"){t.status="awaiting_merchant_confirmation";(t.history=t.history||[]).push(`Day ${S.day}: replacement delivered per ticket system`);s.status="awaiting_merchant_confirmation";s.device={model:s.device.model,status:"online",offline_days:0};n++;log("status_check","Ticket shows replacement delivered. Asking the merchant to confirm.",s.id)}}return n}
+function retryLocal(){if(S.outage)return"CRM is still down. Nothing to retry.";let n=0;for(const k of [...S.pending]){const r=S.actions[k];delete S.actions[k];S.pending.splice(S.pending.indexOf(k),1);execute(r.shop,r.act,r.ex);n++}return n?`${n} pending update(s) completed.`:"Nothing pending."}
+function digestText(){const r=ranked(),open=r.filter(x=>x.open_ticket),risk=r.slice(0,5).filter(x=>!S.visited.includes(x.id)&&x.score>=30).map(x=>x.name),done=Object.values(S.actions).filter(a=>a.state==="done").length,closed=S.audit.filter(a=>a.kind==="closed").length;
+ return [`Day ${S.day} summary`,`Shops visited: ${S.visited.length}`,`Actions completed: ${done}  |  still pending: ${S.pending.length}`,`Issues closed with evidence: ${closed}`,`Open issues: ${open.length} (${open.slice(0,4).map(x=>x.name).join(", ")||"none"})`,`Shops needing a visit soon: ${risk.join(", ")||"none"}`].join("\n")}
+function sheet(html){const s=$("sheet");s.innerHTML=`<div class="in">${html}</div>`;s.hidden=false;s.onclick=e=>{if(e.target===s)closeSheet()};s.querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>menuAction(b.dataset.x))}
+function closeSheet(){$("sheet").hidden=true}
+function menu(){sheet(`<b>Demo controls</b>
+ <label class="toggle"><input type="checkbox" id="aiT" ${useAI?"checked":""} ${sarvamOn?"":"disabled"}> Use Sarvam for language and notes ${sarvamOn?"":"(offline: server key not set)"}</label>
+ <button data-x="next">Next day (simulate)</button><button data-x="outage">${S.outage?"Restore CRM":"Simulate CRM outage"}</button><button data-x="retry">Retry pending updates (${S.pending.length})</button><button data-x="digest">Manager digest</button>${crmOn?`<button data-x="crm">Open mock CRM screen</button>`:""}<button data-x="audit">Audit log</button><button data-x="reset">Reset demo</button><button data-x="close">Close</button>`);
+ const t=$("aiT");if(t)t.onchange=()=>{useAI=t.checked;renderHead()}}
+async function menuAction(x){if(x==="close")return closeSheet();
+ if(x==="crm"){window.open("/crm.html","_blank");return}
+ if(x==="next"){const n=await nextDay();closeSheet();render();sheet(`<b>Day ${S.day}</b><div>${n?`${n} ticket(s) show a delivered replacement. Open the shop and ask the merchant to confirm.`:"No tickets changed."}</div><button data-x="close">OK</button>`)}
+ else if(x==="outage"){await setOutage(!S.outage);closeSheet();render()}
+ else if(x==="retry"){const m=await retry();closeSheet();render();sheet(`<b>Retry</b><div>${esc(m)}</div><button data-x="close">OK</button>`)}
+ else if(x==="digest")sheet(`<b>Manager digest</b><pre>${esc(digestText())}</pre><button data-x="close">Close</button>`);
+ else if(x==="audit")sheet(`<b>Audit log</b>${S.audit.slice().reverse().map(a=>`<div class="aud"><time>${esc(a.t)} D${a.day}</time><b>${esc(a.kind)}</b> ${esc(a.msg)}</div>`).join("")||'<div class="sub">Nothing yet.</div>'}<button data-x="close">Close</button>`);
+ else if(x==="reset"){await resetAll();closeSheet();render()}}
+$("menuBtn").onclick=menu;
+// ---- CRM connection (falls back to local state if the CRM service is unreachable)
+const crm=(body)=>fetch("/api/crm",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
+async function refreshFromCRM(){try{const r=await fetch("/api/crm?t="+Date.now());if(!r.ok)throw 0;const j=await r.json();crmOn=true;crmStore=j.store;S.shops=j.shops;S.day=j.day;S.outage=j.outage}catch(e){crmOn=false}renderHead()}
+function markPending(id,act,ex){const key=act.key;S.actions[key]={state:"pending",act,shop:id,ex};if(!S.pending.includes(key))S.pending.push(key);log("write_pending","CRM unavailable. Kept pending: "+act.label,id);return{key,state:"pending",label:act.label}}
+async function executeCRM(id,act,ex){const key=act.key;
+ if(S.actions[key]&&S.actions[key].state==="done"){log("duplicate_blocked","Skipped duplicate: "+act.label,id);return{key,state:"duplicate",label:act.label}}
+ if(act.type==="blocked")return{key,state:"blocked",label:act.label};
+ try{const r=await crm({op:"action",key,type:act.type,shop:id,label:act.label,summary:ex.summary});
+  if(r.status===503)return markPending(id,act,ex);if(!r.ok)throw new Error("HTTP "+r.status);
+  const j=await r.json();S.shops[id]=j.shop;S.day=j.day;
+  if(j.state==="duplicate"){log("duplicate_blocked","CRM ignored a duplicate write: "+act.label,id);return{key,state:"duplicate",label:act.label}}
+  S.actions[key]={state:"done",act,shop:id};const i=S.pending.indexOf(key);if(i>=0)S.pending.splice(i,1);if(!S.visited.includes(id))S.visited.push(id);log("action_done",act.label,id);return{key,state:"done",label:act.label}}
+ catch(e){return markPending(id,act,ex)}}
+const executeAny=(id,act,ex)=>crmOn?executeCRM(id,act,ex):Promise.resolve(execute(id,act,ex));
+async function retry(){if(!crmOn)return retryLocal();if(!S.pending.length)return"Nothing pending.";let n=0;for(const k of [...S.pending]){const rec=S.actions[k];delete S.actions[k];S.pending.splice(S.pending.indexOf(k),1);const r=await executeCRM(rec.shop,rec.act,rec.ex);if(r.state!=="pending")n++}
+ return n?`${n} pending update(s) completed.`:"CRM is still unavailable. Updates stay pending."}
+async function nextDay(){if(!crmOn)return nextLocal();try{const r=await crm({op:"nextday"});const j=await r.json();S.shops=j.shops;S.day=j.day;
+ for(const s of Object.values(S.shops)){const t=s.open_ticket;if(t&&t.status==="awaiting_merchant_confirmation")log("status_check","Ticket shows replacement delivered. Asking the merchant to confirm.",s.id)}return j.changed}catch(e){return 0}}
+async function setOutage(on){if(!crmOn){S.outage=on;log("outage",on?"CRM outage simulated ON":"CRM restored");return}await crm({op:"outage",on});S.outage=on;log("outage",on?"CRM outage simulated ON":"CRM restored")}
+async function resetAll(){if(crmOn)await crm({op:"reset"});fresh();await refreshFromCRM()}
+async function confirmMerchant(id,yes){if(!crmOn)return confirmLocal(id,yes);const t=S.shops[id].open_ticket;if(!t||t.status!=="awaiting_merchant_confirmation")return;
+ try{const r=await crm({op:"confirm",shop:id,positive:yes});if(!r.ok)throw 0;const j=await r.json();S.shops[id]=j.shop;
+  if(yes){log("closed",`Issue closed with evidence: ticket ${t.id} delivered and merchant confirmed`,id);ui[id+"c"]="Closed with evidence: "+JSON.stringify(j.evidence)}
+  else{log("escalated",`Merchant says it still fails. Reopened ${t.id} and escalated to the area manager`,id);ui[id+"c"]="Reopened and escalated to the area manager."}}
+ catch(e){ui[id+"c"]="CRM did not respond. Try again."}render()}
+fresh();render();refreshFromCRM().then(render);
+(async()=>{try{const r=await fetch("/api/chat");const j=await r.json();sarvamOn=!!j.sarvam;renderHead()}catch(e){}})();
+</script></body></html>

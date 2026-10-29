@@ -1,6 +1,6 @@
 // Local test harness only (not deployed): serves /public and routes /api/* to the same handlers Vercel runs.
 const http=require("http"),fs=require("fs"),path=require("path");
-const H={chat:require("./api/chat.js"),tts:require("./api/tts.js"),stt:require("./api/stt.js")};
+const H={chat:require("./api/chat.js"),tts:require("./api/tts.js"),stt:require("./api/stt.js"),crm:require("./api/crm.js")};
 http.createServer(async(req,res)=>{
   const u=new URL(req.url,"http://x");
   if(u.pathname.startsWith("/api/")){

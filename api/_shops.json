@@ -1,0 +1,713 @@
+[
+  {
+    "id": "S01",
+    "name": "Sharma Kirana",
+    "owner": "Rakesh Sharma",
+    "area": "HSR Layout",
+    "language": "kn",
+    "phone_masked": "98XXXX2841",
+    "device": {
+      "model": "Soundbox 4",
+      "status": "speaker_fault",
+      "offline_days": 6
+    },
+    "payments_prev7": 52000,
+    "payments_last7": 31200,
+    "open_ticket": {
+      "id": "T-1042",
+      "issue": "Speaker not working",
+      "opened_days_ago": 6,
+      "status": "open"
+    },
+    "promise_due": {
+      "text": "Come back with an update on the speaker",
+      "due_day": 1
+    },
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -6: merchant said the speaker is dead, ticket raised, promised an update",
+    "status": "healthy"
+  },
+  {
+    "id": "S02",
+    "name": "Lakshmi Stores",
+    "owner": "Lakshmi Devi",
+    "area": "BTM Layout",
+    "language": "kn",
+    "phone_masked": "98XXXX9768",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 22000,
+    "payments_last7": 20900,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -7: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S03",
+    "name": "Fresh Basket",
+    "owner": "Imran Pasha",
+    "area": "Indiranagar",
+    "language": "hi",
+    "phone_masked": "98XXXX1542",
+    "device": {
+      "model": "Soundbox 4",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 30000,
+    "payments_last7": 21000,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -20: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S04",
+    "name": "Annapurna Tiffins",
+    "owner": "Suresh Gowda",
+    "area": "Jayanagar",
+    "language": "kn",
+    "phone_masked": "98XXXX9619",
+    "device": {
+      "model": "Pebble Soundbox",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 60000,
+    "payments_last7": 64800,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -5: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S05",
+    "name": "Gupta Medicals",
+    "owner": "Anil Gupta",
+    "area": "Koramangala",
+    "language": "hi",
+    "phone_masked": "98XXXX7601",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "offline",
+      "offline_days": 3
+    },
+    "payments_prev7": 44000,
+    "payments_last7": 33000,
+    "open_ticket": {
+      "id": "T-1051",
+      "issue": "Device offline",
+      "opened_days_ago": 3,
+      "status": "open"
+    },
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -13: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S06",
+    "name": "City Mobiles",
+    "owner": "Farhan Ali",
+    "area": "HSR Layout",
+    "language": "hi",
+    "phone_masked": "98XXXX5039",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 39000,
+    "payments_last7": 40560,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -16: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S07",
+    "name": "Ganesh Bakery",
+    "owner": "Ganesh Rao",
+    "area": "BTM Layout",
+    "language": "kn",
+    "phone_masked": "98XXXX9968",
+    "device": {
+      "model": "Soundbox 4",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 51000,
+    "payments_last7": 57120,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -8: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S08",
+    "name": "Royal Salon",
+    "owner": "Pooja Nair",
+    "area": "Indiranagar",
+    "language": "en",
+    "phone_masked": "98XXXX4340",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 36000,
+    "payments_last7": 36000,
+    "open_ticket": null,
+    "promise_due": {
+      "text": "Share card-payment offer",
+      "due_day": 1
+    },
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -15: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S09",
+    "name": "Sri Devi Flowers",
+    "owner": "Devi Prasad",
+    "area": "Jayanagar",
+    "language": "kn",
+    "phone_masked": "98XXXX9703",
+    "device": {
+      "model": "Pebble Soundbox",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 15000,
+    "payments_last7": 14250,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -9: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S10",
+    "name": "Metro Stationers",
+    "owner": "Vikram Jain",
+    "area": "Koramangala",
+    "language": "hi",
+    "phone_masked": "98XXXX7020",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 27000,
+    "payments_last7": 29160,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -10: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S11",
+    "name": "Balaji Hardware",
+    "owner": "Balaji Reddy",
+    "area": "HSR Layout",
+    "language": "kn",
+    "phone_masked": "98XXXX5315",
+    "device": {
+      "model": "Card Soundbox",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 44000,
+    "payments_last7": 41800,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -15: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S12",
+    "name": "Cafe Aroma",
+    "owner": "Neha Kapoor",
+    "area": "BTM Layout",
+    "language": "en",
+    "phone_masked": "98XXXX6183",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 38000,
+    "payments_last7": 24500,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -6: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S13",
+    "name": "Mahesh Provision",
+    "owner": "Mahesh Kumar",
+    "area": "Indiranagar",
+    "language": "kn",
+    "phone_masked": "98XXXX9942",
+    "device": {
+      "model": "Card Soundbox",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 33000,
+    "payments_last7": 33000,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -9: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S14",
+    "name": "New Style Tailors",
+    "owner": "Salim Khan",
+    "area": "Jayanagar",
+    "language": "hi",
+    "phone_masked": "98XXXX7139",
+    "device": {
+      "model": "Soundbox 4",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 15000,
+    "payments_last7": 13800,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -12: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S15",
+    "name": "Green Leaf Juice",
+    "owner": "Arjun Menon",
+    "area": "Koramangala",
+    "language": "en",
+    "phone_masked": "98XXXX4225",
+    "device": {
+      "model": "Soundbox 4",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 33000,
+    "payments_last7": 36960,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -13: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S16",
+    "name": "Kaveri Sweets",
+    "owner": "Kaveri Bai",
+    "area": "HSR Layout",
+    "language": "kn",
+    "phone_masked": "98XXXX1795",
+    "device": {
+      "model": "Soundbox 4",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 42000,
+    "payments_last7": 45360,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -6: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S17",
+    "name": "Star Electricals",
+    "owner": "Prakash Shetty",
+    "area": "BTM Layout",
+    "language": "kn",
+    "phone_masked": "98XXXX6492",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 26000,
+    "payments_last7": 26000,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": true
+    },
+    "last_visit": "Day -7: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S18",
+    "name": "Daily Needs Mart",
+    "owner": "Rohit Verma",
+    "area": "Indiranagar",
+    "language": "hi",
+    "phone_masked": "98XXXX9161",
+    "device": {
+      "model": "Card Soundbox",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 44000,
+    "payments_last7": 41800,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -18: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S19",
+    "name": "Pearl Optical",
+    "owner": "Meera Iyer",
+    "area": "Jayanagar",
+    "language": "en",
+    "phone_masked": "98XXXX1623",
+    "device": {
+      "model": "Soundbox 4",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 54000,
+    "payments_last7": 49680,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -18: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S20",
+    "name": "Ramesh Chats",
+    "owner": "Ramesh Yadav",
+    "area": "Koramangala",
+    "language": "hi",
+    "phone_masked": "98XXXX9024",
+    "device": {
+      "model": "Pebble Soundbox",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 15000,
+    "payments_last7": 15600,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -3: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S21",
+    "name": "Siddhi Pooja Items",
+    "owner": "Siddhi Patil",
+    "area": "HSR Layout",
+    "language": "kn",
+    "phone_masked": "98XXXX5628",
+    "device": {
+      "model": "Pebble Soundbox",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 20000,
+    "payments_last7": 21600,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -4: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S22",
+    "name": "Hotel Udupi Grand",
+    "owner": "Narayan Hegde",
+    "area": "BTM Layout",
+    "language": "kn",
+    "phone_masked": "98XXXX1819",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 22000,
+    "payments_last7": 20900,
+    "open_ticket": {
+      "id": "T-1049",
+      "issue": "Settlement delayed",
+      "opened_days_ago": 2,
+      "status": "open"
+    },
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -12: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S23",
+    "name": "Happy Kids Toys",
+    "owner": "Anita Singh",
+    "area": "Indiranagar",
+    "language": "hi",
+    "phone_masked": "98XXXX8452",
+    "device": {
+      "model": "Pebble Soundbox",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 58000,
+    "payments_last7": 58000,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -9: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S24",
+    "name": "Tasty Bites",
+    "owner": "Fatima Begum",
+    "area": "Jayanagar",
+    "language": "hi",
+    "phone_masked": "98XXXX8561",
+    "device": {
+      "model": "Card Soundbox",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 59000,
+    "payments_last7": 54280,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -17: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S25",
+    "name": "Venkat Cycles",
+    "owner": "Venkatesh M",
+    "area": "Koramangala",
+    "language": "kn",
+    "phone_masked": "98XXXX7087",
+    "device": {
+      "model": "Soundbox 4",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 34000,
+    "payments_last7": 34000,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -14: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S26",
+    "name": "Moon Dry Cleaners",
+    "owner": "Chandan Das",
+    "area": "HSR Layout",
+    "language": "hi",
+    "phone_masked": "98XXXX7214",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 26000,
+    "payments_last7": 27040,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -6: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S27",
+    "name": "Book Nook",
+    "owner": "Shruti Rao",
+    "area": "BTM Layout",
+    "language": "en",
+    "phone_masked": "98XXXX4402",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 60000,
+    "payments_last7": 64800,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -12: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S28",
+    "name": "Om Sai Pharmacy",
+    "owner": "Sai Kumar",
+    "area": "Indiranagar",
+    "language": "kn",
+    "phone_masked": "98XXXX6029",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 27000,
+    "payments_last7": 29160,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -11: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S29",
+    "name": "Aqua Pure Water",
+    "owner": "Jose Thomas",
+    "area": "Jayanagar",
+    "language": "en",
+    "phone_masked": "98XXXX8737",
+    "device": {
+      "model": "Card Soundbox",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 16000,
+    "payments_last7": 15200,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": true,
+      "interested": false
+    },
+    "last_visit": "Day -9: routine check, no issues",
+    "status": "healthy"
+  },
+  {
+    "id": "S30",
+    "name": "Bangalore Biryani House",
+    "owner": "Hamid Sheikh",
+    "area": "Koramangala",
+    "language": "hi",
+    "phone_masked": "98XXXX6961",
+    "device": {
+      "model": "Soundbox 7",
+      "status": "online",
+      "offline_days": 0
+    },
+    "payments_prev7": 41000,
+    "payments_last7": 45920,
+    "open_ticket": null,
+    "promise_due": null,
+    "loan": {
+      "eligible": false,
+      "interested": false
+    },
+    "last_visit": "Day -17: routine check, no issues",
+    "status": "healthy"
+  }
+]
