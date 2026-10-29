@@ -1,4 +1,4 @@
-<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Sahyogi</title><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Noto+Sans+Kannada:wght@400;600&family=Noto+Sans+Devanagari:wght@400;600&display=swap">
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Sahyogi</title><meta name="theme-color" content="#0b6b57"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Sahyogi"><meta name="apple-mobile-web-app-status-bar-style" content="default"><link rel="manifest" href="/manifest.webmanifest"><link rel="icon" href="/icon-192.png"><link rel="apple-touch-icon" href="/icon-180.png"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;600;700;800&family=Noto+Sans+Kannada:wght@400;600&family=Noto+Sans+Devanagari:wght@400;600&display=swap">
 <style>
 /* Layout: one narrow column like a field exec's phone; ranked list, then a shop with brief and note steps. */
 :root{--bg:#f4f5f2;--card:#ffffff;--ink:#14201c;--mute:#5d6b65;--line:#dde2dd;--brand:#0b6b57;--brand-ink:#ffffff;--soft:#e3f1ec;--warn:#a85a00;--warn-bg:#fdf0dc;--bad:#b3261e;--bad-bg:#fbe5e3;--ok:#146c43;--ok-bg:#dff3e7;--tile:#eef1ee}
@@ -49,12 +49,25 @@ pre{white-space:pre-wrap;font:13px/1.5 Manrope,sans-serif;margin:0}
 .toggle{display:flex;gap:8px;align-items:center;font-weight:600;color:var(--ink);margin:10px 0 0}
 .toggle input{width:18px;height:18px;accent-color:var(--brand)}
 .back{background:none;padding:12px 0 0;color:var(--brand)}
+html{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}button,.shop{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
+#tabs{position:fixed;left:0;right:0;bottom:0;z-index:8;background:var(--card);border-top:1px solid var(--line);display:flex;justify-content:center;padding-bottom:env(safe-area-inset-bottom,0px)}
+#tabs .in{display:flex;width:100%;max-width:560px}
+#tabs button{flex:1;background:none;border-radius:0;color:var(--mute);font-size:11px;font-weight:700;padding:9px 4px 8px;display:flex;flex-direction:column;align-items:center;gap:3px}
+#tabs button svg{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+#tabs button.on{color:var(--brand)}
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s}}
+@media (max-width:480px){h1 small{display:none}.chip{font-size:11px;padding:3px 8px}header{gap:6px}}
 </style>
 </head><body><div class="wrap">
-<header><h1>Sahyogi<small>AI teammate for Paytm field executives</small></h1><span class="chip" id="day"></span><span class="chip" id="crm" hidden></span><span class="chip" id="mode"></span><button id="menuBtn" aria-label="Menu">Menu</button></header>
+<header><h1>Sahyogi<small>AI teammate for Paytm field executives</small></h1><span class="chip" id="day"></span><span class="chip" id="crm" hidden></span><span class="chip" id="mode"></span></header>
 <main id="app"></main>
 </div>
+<nav id="tabs" aria-label="Main"><div class="in">
+<button data-tab="visits"><svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>Visits</button>
+<button data-tab="activity"><svg viewBox="0 0 24 24"><path d="M3 12h4l3-8 4 16 3-8h4"/></svg>Activity</button>
+<button data-tab="digest"><svg viewBox="0 0 24 24"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>Digest</button>
+<button data-tab="more"><svg viewBox="0 0 24 24"><circle cx="5" cy="12" r="1.5"/><circle cx="12" cy="12" r="1.5"/><circle cx="19" cy="12" r="1.5"/></svg>More</button></div></nav>
 <div id="sheet" class="sheet" hidden></div>
 <script>
 const SHOPS=[
@@ -847,7 +860,7 @@ function execute(id,act,ex){const s=S.shops[id],key=act.key;
  if(!S.visited.includes(id))S.visited.push(id);log("action_done",act.label,id);return{key,state:"done",label:act.label}}
 // ---- views
 const SAMPLES={clear:"Speaker is dead. He wants a replacement and is also asking about a loan. Available tomorrow.",hindi:"दुकानदार को नया स्पीकर चाहिए, पुराना बदल दो। कल मिलेंगे।",unclear:"Met the owner, had tea, he said things are slow lately.",loan:"He is asking about a loan, no device problem. Visit again Friday."};
-function renderHead(){const cc=$("crm");cc.hidden=!crmOn;if(crmOn){cc.textContent=crmStore==="redis"?"CRM connected":"CRM (temporary)";cc.className="chip"+(crmStore==="redis"?"":" warn")}$("day").textContent="Day "+S.day;const m=$("mode");m.textContent=useAI&&sarvamOn?"Sarvam on":"Offline rules";m.className="chip"+(useAI&&sarvamOn?"":" warn");
+function renderHead(){document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab==="visits"));const cc=$("crm");cc.hidden=!crmOn;if(crmOn){cc.textContent=crmStore==="redis"?"CRM connected":"CRM (temporary)";cc.className="chip"+(crmStore==="redis"?"":" warn")}$("day").textContent="Day "+S.day;const m=$("mode");m.textContent=useAI&&sarvamOn?"Sarvam on":"Offline rules";m.className="chip"+(useAI&&sarvamOn?"":" warn");
  if(S.outage){m.textContent="CRM outage";m.className="chip bad"}}
 function render(){renderHead();const a=$("app");a.innerHTML=view==="list"?listHTML():shopHTML(view);bind()}
 function listHTML(){return `<h2 style="margin-top:16px">Today's visits</h2><div class="sub">Ranked by plain rules. Tap a shop to see why.</div>`+ranked().map((s,i)=>`<div class="card shop" tabindex="0" role="button" data-open="${s.id}"><div class="rank">${i+1}</div><div class="body"><b>${esc(s.name)}</b><div class="sub">${esc(s.owner)} · ${esc(s.area)}${s.visited||S.visited.includes(s.id)?' · <span class="tag done">VISITED</span>':''}</div>${s.why.length?`<ul>${s.why.slice(0,2).map(w=>`<li>${esc(w)}</li>`).join("")}</ul>`:""}</div><div class="score">${s.score}<span>score</span></div></div>`).join("")}
@@ -918,7 +931,8 @@ async function menuAction(x){if(x==="close")return closeSheet();
  else if(x==="digest")sheet(`<b>Manager digest</b><pre>${esc(digestText())}</pre><button data-x="close">Close</button>`);
  else if(x==="audit")sheet(`<b>Audit log</b>${S.audit.slice().reverse().map(a=>`<div class="aud"><time>${esc(a.t)} D${a.day}</time><b>${esc(a.kind)}</b> ${esc(a.msg)}</div>`).join("")||'<div class="sub">Nothing yet.</div>'}<button data-x="close">Close</button>`);
  else if(x==="reset"){await resetAll();closeSheet();render()}}
-$("menuBtn").onclick=menu;
+const tabGo={visits:()=>{view="list";render();scrollTo(0,0)},activity:()=>menuAction("audit"),digest:()=>menuAction("digest"),more:menu};
+document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>tabGo[b.dataset.tab]());
 // ---- CRM connection (falls back to local state if the CRM service is unreachable)
 const crm=(body)=>fetch("/api/crm",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify(body)});
 async function refreshFromCRM(){try{const r=await fetch("/api/crm?t="+Date.now());if(!r.ok)throw 0;const j=await r.json();crmOn=true;crmStore=j.store;S.shops=j.shops;S.day=j.day;S.outage=j.outage}catch(e){crmOn=false}renderHead()}
