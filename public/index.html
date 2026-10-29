@@ -790,6 +790,11 @@ let S,view="list",useAI=true,sarvamOn=false,ui={},rec=null,recChunks=[],crmOn=fa
 function fresh(){S={day:1,shops:Object.fromEntries(JSON.parse(JSON.stringify(SHOPS)).map(s=>[s.id,s])),visited:[],audit:[],actions:{},pending:[],outage:false};ui={};view="list"}
 const esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const $=id=>document.getElementById(id);
+const DAY0=new Date();DAY0.setHours(0,0,0,0);
+const dateAt=(n,o)=>{const d=new Date(DAY0);d.setDate(d.getDate()+(n-1));return d.toLocaleDateString("en-GB",o)};
+const dateFor=n=>dateAt(n,{day:"numeric",month:"short"}),dateLabel=n=>dateAt(n,{weekday:"short",day:"numeric",month:"short"});
+const dd=t=>String(t==null?"":t).replace(/\bDay (-?\d+)\b/g,(m,n)=>dateFor(+n));
+
 function log(kind,msg,shop){S.audit.push({t:new Date().toLocaleTimeString("en-GB"),day:S.day,kind,shop,msg})}
 const drop=s=>Math.round(100*(s.payments_prev7-s.payments_last7)/Math.max(s.payments_prev7,1));
 function score(s){let p=0,w=[];const t=s.open_ticket;
@@ -825,7 +830,7 @@ async function ask(prompt){if(!useAI||!sarvamOn)return null;
   const r=await fetch("/api/chat",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({prompt}),signal:ctl.signal});clearTimeout(to);
   if(!r.ok)throw new Error("HTTP "+r.status);const j=await r.json();return (j.text||"").trim()||null}
  catch(e){log("llm_fallback","Sarvam chat failed, used offline rules ("+e.message+")");return null}}
-function facts(s){const t=s.open_ticket;return{shop:s.name,owner:s.owner,ticket:t?t.issue:null,ticket_days_open:t?t.opened_days_ago:null,device_status:s.device.status,payment_change_percent:-drop(s),promise_from_last_visit:s.promise_due?s.promise_due.text:null,loan_eligible:s.loan.eligible,last_visit:s.last_visit}}
+function facts(s){const t=s.open_ticket;return{shop:s.name,owner:s.owner,ticket:t?t.issue:null,ticket_days_open:t?t.opened_days_ago:null,device_status:s.device.status,payment_change_percent:-drop(s),promise_from_last_visit:s.promise_due?s.promise_due.text:null,loan_eligible:s.loan.eligible,last_visit:dd(s.last_visit)}}
 async function makeBrief(s,l){
  const p=`You are Sahyogi, an AI teammate for a Paytm field sales executive in Bengaluru. Write a pre-visit brief that will be READ ALOUD, under 45 words, plain spoken sentences.
 Rules: use ONLY the facts in the JSON. Never invent numbers, dates or promises. Say what is wrong first, then what the executive promised last time, then ONE thing to offer. Do not claim a cause; a payment drop and a device fault are separate observations. Write in the requested language and script. No emojis, no markdown. Output only the brief.
@@ -860,7 +865,7 @@ function execute(id,act,ex){const s=S.shops[id],key=act.key;
  if(!S.visited.includes(id))S.visited.push(id);log("action_done",act.label,id);return{key,state:"done",label:act.label}}
 // ---- views
 const SAMPLES={clear:"Speaker is dead. He wants a replacement and is also asking about a loan. Available tomorrow.",hindi:"दुकानदार को नया स्पीकर चाहिए, पुराना बदल दो। कल मिलेंगे।",unclear:"Met the owner, had tea, he said things are slow lately.",loan:"He is asking about a loan, no device problem. Visit again Friday."};
-function renderHead(){document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab==="visits"));const cc=$("crm");cc.hidden=!crmOn;if(crmOn){cc.textContent=crmStore==="redis"?"CRM connected":"CRM (temporary)";cc.className="chip"+(crmStore==="redis"?"":" warn")}$("day").textContent="Day "+S.day;const m=$("mode");m.textContent=useAI&&sarvamOn?"Sarvam on":"Offline rules";m.className="chip"+(useAI&&sarvamOn?"":" warn");
+function renderHead(){document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab==="visits"));const cc=$("crm");cc.hidden=!crmOn;if(crmOn){cc.textContent=crmStore==="redis"?"CRM connected":"CRM (temporary)";cc.className="chip"+(crmStore==="redis"?"":" warn")}$("day").textContent=dateLabel(S.day);const m=$("mode");m.textContent=useAI&&sarvamOn?"Sarvam on":"Offline rules";m.className="chip"+(useAI&&sarvamOn?"":" warn");
  if(S.outage){m.textContent="CRM outage";m.className="chip bad"}}
 function render(){renderHead();const a=$("app");a.innerHTML=view==="list"?listHTML():shopHTML(view);bind()}
 function listHTML(){return `<h2 style="margin-top:16px">Today's visits</h2><div class="sub">Ranked by plain rules. Tap a shop to see why.</div>`+ranked().map((s,i)=>`<div class="card shop" tabindex="0" role="button" data-open="${s.id}"><div class="rank">${i+1}</div><div class="body"><b>${esc(s.name)}</b><div class="sub">${esc(s.owner)} · ${esc(s.area)}${s.visited||S.visited.includes(s.id)?' · <span class="tag done">VISITED</span>':''}</div>${s.why.length?`<ul>${s.why.slice(0,2).map(w=>`<li>${esc(w)}</li>`).join("")}</ul>`:""}</div><div class="score">${s.score}<span>score</span></div></div>`).join("")}
@@ -868,7 +873,7 @@ function shopHTML(id){const s=S.shops[id],[p,w]=score(s),t=s.open_ticket,u=ui[id
  const dev=s.device.status==="online"?`${s.device.model}: online`:`${s.device.model}: ${s.device.status.replace(/_/g," ")}`;
  let h=`<button class="back" data-back>← All shops</button><div class="card"><b style="font-size:19px">${esc(s.name)}</b><div class="sub">${esc(s.owner)} · ${esc(s.area)} · ${esc(s.phone_masked)}</div>
  <div class="grid"><div class="tile ${d>=25?"bad":""}"><i>Payments vs last week</i><b>${d>0?"-"+d:"+"+Math.abs(d)}%</b></div><div class="tile"><i>Device</i><b>${esc(dev)}</b></div><div class="tile"><i>Ticket</i><b>${t?esc(t.id)+" ("+esc(t.status.replace(/_/g," "))+")":"None"}</b></div><div class="tile"><i>Loan</i><b>${s.loan.eligible?(s.loan.interested?"Interested":"Eligible"):"Not eligible"}</b></div></div>
- ${w.length?`<b class="sub">Why this shop</b><ul class="why">${w.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}<div class="sub" style="margin-top:8px">Last visit: ${esc(s.last_visit)}</div></div>`;
+ ${w.length?`<b class="sub">Why this shop</b><ul class="why">${w.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}<div class="sub" style="margin-top:8px">Last visit: ${esc(dd(s.last_visit))}</div></div>`;
  if(t&&t.status==="awaiting_merchant_confirmation")h+=`<div class="card"><h2>Next-day check</h2><div class="sub">Ticket ${esc(t.id)} shows the replacement as delivered. Sahyogi does not close it yet. It asks the merchant first.</div>${ui[id+"c"]?`<div class="note">${esc(ui[id+"c"])}</div>`:`<div class="row" style="margin-top:10px"><button data-conf="1">Merchant: "Yes, the speaker works"</button><button data-conf="0">Merchant: "Still not working"</button></div>`}</div>`;
  const lc=u.lang;
  h+=`<div class="card"><h2>1. Pre-visit brief</h2><label for="lang">Language</label><select id="lang"><option value="kn"${lc==="kn"?" selected":""}>Kannada</option><option value="hi"${lc==="hi"?" selected":""}>Hindi</option><option value="en"${lc==="en"?" selected":""}>English</option></select>
@@ -916,7 +921,7 @@ function confirmLocal(id,yes){const s=S.shops[id],t=s.open_ticket;if(!t||t.statu
 function nextLocal(){S.day++;let n=0;for(const s of Object.values(S.shops)){const t=s.open_ticket;if(t&&t.status==="replacement_scheduled"){t.status="awaiting_merchant_confirmation";(t.history=t.history||[]).push(`Day ${S.day}: replacement delivered per ticket system`);s.status="awaiting_merchant_confirmation";s.device={model:s.device.model,status:"online",offline_days:0};n++;log("status_check","Ticket shows replacement delivered. Asking the merchant to confirm.",s.id)}}return n}
 function retryLocal(){if(S.outage)return"CRM is still down. Nothing to retry.";let n=0;for(const k of [...S.pending]){const r=S.actions[k];delete S.actions[k];S.pending.splice(S.pending.indexOf(k),1);execute(r.shop,r.act,r.ex);n++}return n?`${n} pending update(s) completed.`:"Nothing pending."}
 function digestText(){const r=ranked(),open=r.filter(x=>x.open_ticket),risk=r.slice(0,5).filter(x=>!S.visited.includes(x.id)&&x.score>=30).map(x=>x.name),done=Object.values(S.actions).filter(a=>a.state==="done").length,closed=S.audit.filter(a=>a.kind==="closed").length;
- return [`Day ${S.day} summary`,`Shops visited: ${S.visited.length}`,`Actions completed: ${done}  |  still pending: ${S.pending.length}`,`Issues closed with evidence: ${closed}`,`Open issues: ${open.length} (${open.slice(0,4).map(x=>x.name).join(", ")||"none"})`,`Shops needing a visit soon: ${risk.join(", ")||"none"}`].join("\n")}
+ return [`${dateLabel(S.day)} summary`,`Shops visited: ${S.visited.length}`,`Actions completed: ${done}  |  still pending: ${S.pending.length}`,`Issues closed with evidence: ${closed}`,`Open issues: ${open.length} (${open.slice(0,4).map(x=>x.name).join(", ")||"none"})`,`Shops needing a visit soon: ${risk.join(", ")||"none"}`].join("\n")}
 function sheet(html){const s=$("sheet");s.innerHTML=`<div class="in">${html}</div>`;s.hidden=false;s.onclick=e=>{if(e.target===s)closeSheet()};s.querySelectorAll("[data-x]").forEach(b=>b.onclick=()=>menuAction(b.dataset.x))}
 function closeSheet(){$("sheet").hidden=true}
 function menu(){sheet(`<b>Demo controls</b>
@@ -925,11 +930,11 @@ function menu(){sheet(`<b>Demo controls</b>
  const t=$("aiT");if(t)t.onchange=()=>{useAI=t.checked;renderHead()}}
 async function menuAction(x){if(x==="close")return closeSheet();
  if(x==="crm"){window.open("/crm.html","_blank");return}
- if(x==="next"){const n=await nextDay();closeSheet();render();sheet(`<b>Day ${S.day}</b><div>${n?`${n} ticket(s) show a delivered replacement. Open the shop and ask the merchant to confirm.`:"No tickets changed."}</div><button data-x="close">OK</button>`)}
+ if(x==="next"){const n=await nextDay();closeSheet();render();sheet(`<b>${esc(dateLabel(S.day))}</b><div>${n?`${n} ticket(s) show a delivered replacement. Open the shop and ask the merchant to confirm.`:"No tickets changed."}</div><button data-x="close">OK</button>`)}
  else if(x==="outage"){await setOutage(!S.outage);closeSheet();render()}
  else if(x==="retry"){const m=await retry();closeSheet();render();sheet(`<b>Retry</b><div>${esc(m)}</div><button data-x="close">OK</button>`)}
  else if(x==="digest")sheet(`<b>Manager digest</b><pre>${esc(digestText())}</pre><button data-x="close">Close</button>`);
- else if(x==="audit")sheet(`<b>Audit log</b>${S.audit.slice().reverse().map(a=>`<div class="aud"><time>${esc(a.t)} D${a.day}</time><b>${esc(a.kind)}</b> ${esc(a.msg)}</div>`).join("")||'<div class="sub">Nothing yet.</div>'}<button data-x="close">Close</button>`);
+ else if(x==="audit")sheet(`<b>Audit log</b>${S.audit.slice().reverse().map(a=>`<div class="aud"><time>${esc(a.t)} ${esc(dateFor(a.day))}</time><b>${esc(a.kind)}</b> ${esc(a.msg)}</div>`).join("")||'<div class="sub">Nothing yet.</div>'}<button data-x="close">Close</button>`);
  else if(x==="reset"){await resetAll();closeSheet();render()}}
 const tabGo={visits:()=>{view="list";render();scrollTo(0,0)},activity:()=>menuAction("audit"),digest:()=>menuAction("digest"),more:menu};
 document.querySelectorAll("[data-tab]").forEach(b=>b.onclick=()=>tabGo[b.dataset.tab]());
