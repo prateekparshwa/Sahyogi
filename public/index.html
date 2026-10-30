@@ -828,7 +828,7 @@ function offlineExtract(note){const low=note.toLowerCase();const reqs=[];
 async function ask(prompt,task){if(!useAI||!sarvamOn)return null;
  try{const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),25000);
   const r=await fetch("/api/chat",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({prompt,task}),signal:ctl.signal});clearTimeout(to);
-  if(!r.ok)throw new Error("HTTP "+r.status);const j=await r.json();lastModel=j.model||"";return (j.text||"").trim()||null}
+  if(!r.ok){let d="";try{const e=await r.json();d=" "+JSON.stringify(e.tried||e.error||"").slice(0,240)}catch(_){}throw new Error("HTTP "+r.status+d)}const j=await r.json();lastModel=j.model||"";return (j.text||"").trim()||null}
  catch(e){log("llm_fallback","Sarvam chat failed, used offline rules ("+e.message+")");return null}}
 function facts(s){const t=s.open_ticket;return{shop:s.name,owner:s.owner,ticket:t?t.issue:null,ticket_days_open:t?t.opened_days_ago:null,device_status:s.device.status,payment_change_percent:-drop(s),promise_from_last_visit:s.promise_due?s.promise_due.text:null,loan_eligible:s.loan.eligible,last_visit:dd(s.last_visit)}}
 async function makeBrief(s,l){
