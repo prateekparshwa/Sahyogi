@@ -817,11 +817,13 @@ function offlineBrief(s,l){const t=s.open_ticket;
  if(!t){return{en:`${s.name}: nothing urgent. Payments are steady. Ask how the device is working.`,hi:`${s.name}: कोई जरूरी मुद्दा नहीं। पेमेंट स्थिर है। डिवाइस के बारे में पूछिए।`,kn:`${s.name}: ತುರ್ತು ಸಮಸ್ಯೆ ಇಲ್ಲ. ಪಾವತಿ ಸ್ಥಿರವಾಗಿದೆ. ಸಾಧನ ಹೇಗಿದೆ ಎಂದು ಕೇಳಿ.`}[l]}
  const pr=(s.promise_due||{}).text||"an update";
  return OB[l].replace("{shop}",s.name).replace("{issue}",loc(t.issue,l)).replace("{days}",t.opened_days_ago).replace("{drop}",Math.max(drop(s),0)).replace("{promise}",loc(pr,l)).replace("{loan}",s.loan.eligible?LB[l]:"")}
+const FIXED=["is fixed","got fixed","fixed it","fixed now","is working now","working now","works now","is resolved","resolved","ठीक हो गया","ठीक हो गई","अब चल","ಸರಿಯಾಯಿತು","ಸರಿಯಾಗಿದೆ","ಈಗ ಕೆಲಸ"];
 const KW={replacement:["replace","new speaker","new one","बदल","रिप्लेस","नया","ಬದಲ","ರಿಪ್ಲೇಸ್","ಹೊಸ"],repair:["repair","fix","ठीक","ಸರಿ"],loan_info:["loan","लोन","कर्ज","ಸಾಲ","ಲೋನ್"],upgrade:["upgrade","card machine","अपग्रेड","ಅಪ್‌ಗ್ರೇಡ್"]};
-const DET={replacement:"Merchant wants a replacement device",repair:"Merchant wants the device repaired",loan_info:"Merchant asked about a loan",upgrade:"Merchant interested in an upgrade"};
+const DET={resolved:"The problem was fixed during the visit",replacement:"Merchant wants a replacement device",repair:"Merchant wants the device repaired",loan_info:"Merchant asked about a loan",upgrade:"Merchant interested in an upgrade"};
 const WHEN=[["tomorrow","tomorrow"],["friday","Friday"],["monday","Monday"],["next week","next week"],["कल","tomorrow"],["ನಾಳೆ","tomorrow"]];
 function offlineExtract(note){const low=note.toLowerCase();const reqs=[];
- for(const [t,ws] of Object.entries(KW)) if(ws.some(w=>low.includes(w))) reqs.push({type:t,detail:DET[t]});
+ if(FIXED.some(w=>low.includes(w))&&!KW.replacement.some(w=>low.includes(w)))reqs.push({type:"resolved",detail:DET.resolved});
+ else for(const [t,ws] of Object.entries(KW)) if(ws.some(w=>low.includes(w))) reqs.push({type:t,detail:DET[t]});
  const w=(WHEN.find(([k])=>low.includes(k))||[])[1]||null;
  if(!reqs.length) return{summary:"Visit note recorded, but the merchant's request is unclear.",requests:[],follow_up:{needed:false,when:null},needs_clarification:true,question:"What did the merchant ask for: a replacement, a repair, a loan, or something else?"};
  return{summary:reqs.map(r=>r.detail).join("; ")+(w?`. Available ${w}.`:"."),requests:reqs,follow_up:{needed:true,when:w||"next visit"},needs_clarification:false,question:null}}
@@ -840,8 +842,8 @@ Facts: ${JSON.stringify(facts(s))}`;
  const t=await ask(p,"brief");return t?{text:t,src:"Sarvam"+(lastModel?" · "+lastModel:"")}:{text:offlineBrief(s,l),src:"Offline rules"}}
 async function extract(note,s){const t=s.open_ticket;
  const p=`You turn an executive's spoken visit note into structured facts for a CRM. Return ONLY valid JSON of this shape:
-{"summary":"one sentence in English","requests":[{"type":"replacement|repair|loan_info|upgrade|callback|other","detail":"string"}],"follow_up":{"needed":true,"when":"string or null"},"needs_clarification":false,"question":"ask ONE short question if the note is unclear, else null"}
-Rules: use only what the note says. Do not guess the merchant's intent. If the note does not say what the merchant wants, set needs_clarification true and ask one question. The note may be in English, Hindi or Kannada. Answer in English JSON.
+{"summary":"one sentence in English","requests":[{"type":"replacement|repair|resolved|loan_info|upgrade|callback|other","detail":"string"}],"follow_up":{"needed":true,"when":"string or null"},"needs_clarification":false,"question":"ask ONE short question if the note is unclear, else null"}
+Rules: use type "resolved" when the note says the problem was already fixed or is working now (do NOT use "repair" or "replacement" for that). use only what the note says. Do not guess the merchant's intent. If the note does not say what the merchant wants, set needs_clarification true and ask one question. The note may be in English, Hindi or Kannada. Answer in English JSON.
 Shop: ${s.name} (open ticket: ${t?t.issue:"none"})
 Note: """${note}"""`;
  const raw=await ask(p,"extract");
@@ -849,11 +851,12 @@ Note: """${note}"""`;
  return{ex:offlineExtract(note),src:"Offline rules"}}
 const Q=s=>(ui[s.id]&&ui[s.id].seq)||0;
 function propose(s,ex){const a=[],t=s.open_ticket,k=new Set(ex.requests.map(r=>r.type));
- if(k.has("replacement")||k.has("repair"))a.push({key:`${s.id}:ticket:${t?t.id:"new"}:${Q(s)}`,type:"ticket_update",label:t?`Update existing ticket ${t.id}: replacement requested`:"Open a new ticket: replacement requested",needs_approval:true});
+ if(k.has("resolved")&&t)a.push({key:`${s.id}:resolved:${t.id}:${Q(s)}`,type:"ticket_resolved",label:`Mark ticket ${t.id} as fixed on site and ask the merchant to confirm`,needs_approval:false});
+ else if(k.has("replacement")||k.has("repair"))a.push({key:`${s.id}:ticket:${t?t.id:"new"}:${Q(s)}`,type:"ticket_update",label:t?`Update existing ticket ${t.id}: replacement requested`:"Open a new ticket: replacement requested",needs_approval:true});
  if(k.has("loan_info")){if(s.loan.eligible)a.push({key:`${s.id}:loan_link:${Q(s)}`,type:"loan_link",label:"Send the loan information link to the merchant (SMS)",needs_approval:true});
   else a.push({key:`${s.id}:loan_blocked`,type:"blocked",label:"Merchant asked about a loan, but is not eligible. No link will be sent.",needs_approval:false})}
  if(ex.needs_clarification)a.push({key:`${s.id}:revisit:${S.day}:${Q(s)}`,type:"revisit",label:"Book a revisit to ask what the merchant needs",promise:"Find out what the merchant needs",needs_approval:false});
- else if(ex.follow_up&&ex.follow_up.needed)a.push({key:`${s.id}:revisit:${S.day}:${Q(s)}`,type:"revisit",label:`Book a revisit: ${ex.follow_up.when||"next visit"}`,promise:k.has("replacement")||k.has("repair")?"Confirm replacement delivery":k.has("loan_info")?"Follow up on the loan enquiry":"Follow up with the merchant",needs_approval:false});
+ else if(ex.follow_up&&ex.follow_up.needed)a.push({key:`${s.id}:revisit:${S.day}:${Q(s)}`,type:"revisit",label:`Book a revisit: ${ex.follow_up.when||"next visit"}`,promise:k.has("resolved")?"Confirm the fix with the merchant":k.has("replacement")||k.has("repair")?"Confirm replacement delivery":k.has("loan_info")?"Follow up on the loan enquiry":"Follow up with the merchant",needs_approval:false});
  a.push({key:`${s.id}:crm:${S.day}:${Q(s)}`,type:"crm_entry",label:"Save the visit note to the CRM",needs_approval:false});return a}
 function execute(id,act,ex){const s=S.shops[id],key=act.key;
  if(S.actions[key]&&S.actions[key].state==="done"){log("duplicate_blocked","Skipped duplicate: "+act.label,id);return{key,state:"duplicate",label:act.label}}
@@ -861,6 +864,7 @@ function execute(id,act,ex){const s=S.shops[id],key=act.key;
  if(S.outage){S.actions[key]={state:"pending",act,shop:id,ex};if(!S.pending.includes(key))S.pending.push(key);log("write_pending","CRM unavailable. Kept pending: "+act.label,id);return{key,state:"pending",label:act.label}}
  const t=s.open_ticket;
  if(act.type==="ticket_update"){if(t){t.status="pending_approval";t.proposal={text:act.label};(t.history=t.history||[]).push(`Day ${S.day}: replacement proposed, waiting for Sales Head`)}else{s.open_ticket={id:"T-"+(1100+Object.keys(S.actions).length),issue:"Device issue",opened_days_ago:0,status:"pending_approval",proposal:{text:act.label}}}s.status="pending_approval"}
+ else if(act.type==="ticket_resolved"){if(t){t.status="awaiting_merchant_confirmation";t.fixed_on_site=true;(t.history=t.history||[]).push(`Day ${S.day}: fixed on site, waiting for merchant`);s.status="awaiting_merchant_confirmation"}}
  else if(act.type==="loan_link")s.loan.interested=true;
  else if(act.type==="revisit")s.promise_due={text:act.promise||"Confirm replacement delivery",due_day:S.day+1};
  else if(act.type==="crm_entry")s.last_visit=`Day ${S.day}: ${ex.summary}`;
@@ -879,7 +883,7 @@ function shopHTML(id){const s=S.shops[id],[p,w]=score(s),t=s.open_ticket,u=ui[id
  let h=`<button class="back" data-back>← All shops</button><div class="card"><b style="font-size:19px">${esc(s.name)}</b><div class="sub">${esc(s.owner)} · ${esc(s.area)} · ${esc(s.phone_masked)}</div><a class="mapbtn" href="${mapURL(s)}" target="_blank" rel="noopener">${PIN} Directions to this shop</a>
  <div class="grid"><div class="tile ${d>=25?"bad":""}"><i>Payments vs last week</i><b>${d>0?"-"+d:"+"+Math.abs(d)}%</b></div><div class="tile"><i>Device</i><b>${esc(dev)}</b></div><div class="tile"><i>Ticket</i><b>${t?esc(t.id)+" ("+esc(t.status.replace(/_/g," "))+")":"None"}</b></div><div class="tile"><i>Loan</i><b>${s.loan.eligible?(s.loan.interested?"Interested":"Eligible"):"Not eligible"}</b></div></div>
  ${w.length?`<b class="sub">Why this shop</b><ul class="why">${w.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}<div class="sub" style="margin-top:8px">Last visit: ${esc(dd(s.last_visit))}</div></div>`;
- if(t&&t.status==="awaiting_merchant_confirmation")h+=`<div class="card"><h2>Next-day check</h2><div class="sub">Ticket ${esc(t.id)} shows the replacement as delivered. Sahyogi does not close it yet. It asks the merchant first.</div>${ui[id+"c"]?`<div class="note">${esc(ui[id+"c"])}</div>`:`<div class="row" style="margin-top:10px"><button data-conf="1">Merchant: "Yes, the speaker works"</button><button data-conf="0">Merchant: "Still not working"</button></div>`}</div>`;
+ if(t&&t.status==="awaiting_merchant_confirmation")h+=`<div class="card"><h2>Next-day check</h2><div class="sub">${t.fixed_on_site?`The executive reports ${esc(t.id)} is fixed on site.`:`Ticket ${esc(t.id)} shows the replacement as delivered.`} Sahyogi does not close it yet. It asks the merchant first.</div>${ui[id+"c"]?`<div class="note">${esc(ui[id+"c"])}</div>`:`<div class="row" style="margin-top:10px"><button data-conf="1">Merchant: "Yes, the speaker works"</button><button data-conf="0">Merchant: "Still not working"</button></div>`}</div>`;
  if(t&&t.status==="pending_approval")h+=`<div class="note" style="background:var(--warn-bg)"><b>Waiting for the Sales Head.</b> ${esc((t.proposal||{}).text||"")}<div class="sub">The replacement is not scheduled until the Sales Head accepts it in the CRM.</div></div>`;
  if(t&&t.status==="replacement_scheduled")h+=`<div class="note" style="background:var(--ok-bg)"><b>Sales Head approved.</b> Replacement is scheduled.</div>`;
  if(t&&t.status==="escalated")h+=`<div class="note" style="background:var(--bad-bg)"><b>Escalated to the Area Manager.</b> The merchant says it is still not working.<div class="sub">The Area Manager will close the ticket or ask for another replacement. You will see it here.</div></div>`;
@@ -941,7 +945,7 @@ async function toggleMic(u){if(rec){rec.stop();return}
   rec.start();u.micMsg="Recording... tap again to stop.";render()}
  catch(e){u.micMsg="Microphone blocked. Allow it in the browser, or type the note.";render()}}
 function confirmLocal(id,yes){const s=S.shops[id],t=s.open_ticket;if(!t||t.status!=="awaiting_merchant_confirmation")return;
- if(yes){const ev={ticket:t.id,ticket_state:"delivered",merchant_reply:"Yes, the speaker works",closed_on_day:S.day};t.status="closed";s.status="resolved";s.promise_due=null;s.open_ticket=null;log("closed",`Issue closed with evidence: ticket ${t.id} delivered and merchant confirmed`,id);ui[id+"c"]="Closed with evidence: "+JSON.stringify(ev)}
+ if(yes){const ev={ticket:t.id,ticket_state:t.fixed_on_site?"fixed on site":"delivered",merchant_reply:"Yes, the speaker works",closed_on_day:S.day};t.status="closed";s.status="resolved";s.promise_due=null;s.open_ticket=null;log("closed",`Issue closed with evidence: ticket ${t.id} delivered and merchant confirmed`,id);ui[id+"c"]="Closed with evidence: "+JSON.stringify(ev)}
  else{t.status="escalated";t.opened_days_ago+=1;log("escalated",`Merchant says it still fails. Ticket ${t.id} escalated to the Area Manager`,id);ui[id+"c"]="Escalated to the Area Manager."}render()}
 function nextLocal(){S.day++;let n=0;for(const s of Object.values(S.shops)){const t=s.open_ticket;if(t&&t.status==="replacement_scheduled"){t.status="awaiting_merchant_confirmation";(t.history=t.history||[]).push(`Day ${S.day}: replacement delivered per ticket system`);s.status="awaiting_merchant_confirmation";s.device={model:s.device.model,status:"online",offline_days:0};n++;log("status_check","Ticket shows replacement delivered. Asking the merchant to confirm.",s.id)}}return n}
 function retryLocal(){if(S.outage)return"CRM is still down. Nothing to retry.";let n=0;for(const k of [...S.pending]){const r=S.actions[k];delete S.actions[k];S.pending.splice(S.pending.indexOf(k),1);execute(r.shop,r.act,r.ex);n++}return n?`${n} pending update(s) completed.`:"Nothing pending."}
@@ -985,7 +989,7 @@ async function setOutage(on){if(!crmOn){S.outage=on;log("outage",on?"CRM outage 
 async function resetAll(){if(crmOn)await crm({op:"reset"});fresh();await refreshFromCRM()}
 async function confirmMerchant(id,yes){if(!crmOn)return confirmLocal(id,yes);const t=S.shops[id].open_ticket;if(!t||t.status!=="awaiting_merchant_confirmation")return;
  try{const r=await crm({op:"confirm",shop:id,positive:yes});if(!r.ok)throw 0;const j=await r.json();S.shops[id]=j.shop;
-  if(yes){log("closed",`Issue closed with evidence: ticket ${t.id} delivered and merchant confirmed`,id);const n=(j.evidence.proofs||[]).length;ui[id+"c"]=`Closed with evidence: ticket ${j.evidence.ticket} delivered, approved by ${j.evidence.approved_by}, merchant said "${j.evidence.merchant_reply}"${n?", "+n+" proof(s) attached":""}.`}
+  if(yes){log("closed",`Issue closed with evidence: ticket ${t.id} delivered and merchant confirmed`,id);const n=(j.evidence.proofs||[]).length;ui[id+"c"]=`Closed with evidence: ticket ${j.evidence.ticket} ${j.evidence.ticket_state}, ${j.evidence.approved_by}, merchant said "${j.evidence.merchant_reply}"${n?", "+n+" proof(s) attached":""}.`}
   else{log("escalated",`Merchant says it still fails. Ticket ${t.id} escalated to the Area Manager`,id);ui[id+"c"]="Escalated to the Area Manager."}}
  catch(e){ui[id+"c"]="CRM did not respond. Try again."}render()}
 fresh();render();refreshFromCRM().then(render);
