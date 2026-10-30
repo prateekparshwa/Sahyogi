@@ -1,27 +1,53 @@
-// Sarvam chat. GET reports whether the key is set. POST {prompt} returns {text}.
+// Sarvam chat with a model cascade. All models run in parallel; we take the best-ranked one that
+// answers in time (DeepSeek, then GLM, then Gemma), so a slow or failing model never blocks the demo.
 const URL_ = "https://api.sarvam.ai/v2/chat/completions";
-module.exports = async (req, res) => {
-  const key = process.env.SARVAM_API_KEY;
-  if (req.method === "GET") return res.status(200).json({ sarvam: !!key });
-  if (!key) return res.status(503).json({ error: "SARVAM_API_KEY not set" });
-  const prompt = String((req.body && req.body.prompt) || "").slice(0, 6000);
-  if (prompt.length < 3) return res.status(400).json({ error: "Empty prompt" });
+const list = (s) => s.split(",").map((x) => x.trim()).filter(Boolean);
+// Note to facts: quality first (DeepSeek, then GLM, then Gemma). Brief: spoken aloud, so speed first (Gemma, then DeepSeek).
+const ORDERS = {
+  extract: list(process.env.SARVAM_ORDER_EXTRACT || "deepseekv4.1-flash,glm5.3,gemma4"),
+  brief: list(process.env.SARVAM_ORDER_BRIEF || "gemma4,deepseekv4.1-flash"),
+};
+const WAIT = [Number(process.env.SARVAM_WAIT1_MS || 9000), Number(process.env.SARVAM_WAIT2_MS || 12000)];
+const HARD = Number(process.env.SARVAM_HARD_MS || 24000);
+
+async function call(model, prompt, key) {
+  const ctl = new AbortController();
+  const to = setTimeout(() => ctl.abort(), HARD);
   try {
     const r = await fetch(URL_, {
-      method: "POST",
+      method: "POST", signal: ctl.signal,
       headers: { "api-subscription-key": key, "content-type": "application/json" },
-      body: JSON.stringify({
-        model: process.env.SARVAM_CHAT_MODEL || "gemma4",
-        messages: [{ role: "user", content: prompt }],
-        max_tokens: 2500, temperature: 0.2,
-      }),
+      body: JSON.stringify({ model, messages: [{ role: "user", content: prompt }], max_tokens: 3000, temperature: 0.2 }),
     });
-    if (!r.ok) return res.status(502).json({ error: "Sarvam chat " + r.status });
+    if (!r.ok) return null;
     const j = await r.json();
     let text = ((j.choices && j.choices[0] && j.choices[0].message && j.choices[0].message.content) || "").trim();
     text = text.replace(/<think>[\s\S]*?<\/think>/g, "").trim();
-    return res.status(200).json({ text });
-  } catch (e) {
-    return res.status(502).json({ error: "Sarvam chat failed" });
+    return text ? { model, text } : null;
+  } catch (e) { return null; } finally { clearTimeout(to); }
+}
+const within = (p, ms) => Promise.race([p, new Promise((r) => setTimeout(() => r("timeout"), Math.max(ms, 0)))]);
+
+module.exports = async (req, res) => {
+  const key = process.env.SARVAM_API_KEY;
+  if (req.method === "GET") return res.status(200).json({ sarvam: !!key, orders: ORDERS });
+  if (!key) return res.status(503).json({ error: "SARVAM_API_KEY not set" });
+  const prompt = String((req.body && req.body.prompt) || "").slice(0, 6000);
+  if (prompt.length < 3) return res.status(400).json({ error: "Empty prompt" });
+  const MODELS = ORDERS[req.body && req.body.task] || ORDERS.extract;
+  const t0 = Date.now();
+  const jobs = MODELS.map((m) => call(m, prompt, key));
+  const done = new Array(MODELS.length).fill(undefined);
+  jobs.forEach((p, i) => p.then((v) => { done[i] = v; }));
+  for (let i = 0; i < MODELS.length; i++) {
+    const last = i === MODELS.length - 1;
+    const limit = last ? HARD : WAIT[Math.min(i, WAIT.length - 1)];
+    const v = await within(jobs[i], limit - (Date.now() - t0));
+    if (v && v !== "timeout") return res.status(200).json({ text: v.text, model: v.model, ms: Date.now() - t0 });
+    // preferred model failed or is too slow: use any lower-ranked model that already answered
+    for (let k = i + 1; k < MODELS.length; k++) {
+      if (done[k]) return res.status(200).json({ text: done[k].text, model: done[k].model, ms: Date.now() - t0 });
+    }
   }
+  return res.status(502).json({ error: "No model answered" });
 };

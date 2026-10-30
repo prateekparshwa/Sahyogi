@@ -786,7 +786,7 @@ const SHOPS=[
 const LANG={en:"English",hi:"Hindi (Devanagari script)",kn:"Kannada (Kannada script)"};
 const LNAME={en:"English",hi:"Hindi",kn:"Kannada"};
 const VOICE={en:"en-IN",hi:"hi-IN",kn:"kn-IN"};
-let S,view="list",useAI=true,sarvamOn=false,ui={},rec=null,recChunks=[],crmOn=false,crmStore="";
+let S,view="list",useAI=true,sarvamOn=false,ui={},rec=null,recChunks=[],lastModel="",crmOn=false,crmStore="";
 function fresh(){S={day:1,shops:Object.fromEntries(JSON.parse(JSON.stringify(SHOPS)).map(s=>[s.id,s])),visited:[],audit:[],actions:{},pending:[],outage:false};ui={};view="list"}
 const esc=t=>String(t??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const $=id=>document.getElementById(id);
@@ -825,10 +825,10 @@ function offlineExtract(note){const low=note.toLowerCase();const reqs=[];
  if(!reqs.length) return{summary:"Visit note recorded, but the merchant's request is unclear.",requests:[],follow_up:{needed:false,when:null},needs_clarification:true,question:"What did the merchant ask for: a replacement, a repair, a loan, or something else?"};
  return{summary:reqs.map(r=>r.detail).join("; ")+(w?`. Available ${w}.`:"."),requests:reqs,follow_up:{needed:true,when:w||"next visit"},needs_clarification:false,question:null}}
 // ---- Sarvam via our own /api (key stays on the server)
-async function ask(prompt){if(!useAI||!sarvamOn)return null;
+async function ask(prompt,task){if(!useAI||!sarvamOn)return null;
  try{const ctl=new AbortController(),to=setTimeout(()=>ctl.abort(),25000);
-  const r=await fetch("/api/chat",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({prompt}),signal:ctl.signal});clearTimeout(to);
-  if(!r.ok)throw new Error("HTTP "+r.status);const j=await r.json();return (j.text||"").trim()||null}
+  const r=await fetch("/api/chat",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({prompt,task}),signal:ctl.signal});clearTimeout(to);
+  if(!r.ok)throw new Error("HTTP "+r.status);const j=await r.json();lastModel=j.model||"";return (j.text||"").trim()||null}
  catch(e){log("llm_fallback","Sarvam chat failed, used offline rules ("+e.message+")");return null}}
 function facts(s){const t=s.open_ticket;return{shop:s.name,owner:s.owner,ticket:t?t.issue:null,ticket_days_open:t?t.opened_days_ago:null,device_status:s.device.status,payment_change_percent:-drop(s),promise_from_last_visit:s.promise_due?s.promise_due.text:null,loan_eligible:s.loan.eligible,last_visit:dd(s.last_visit)}}
 async function makeBrief(s,l){
@@ -836,15 +836,15 @@ async function makeBrief(s,l){
 Rules: use ONLY the facts in the JSON. Never invent numbers, dates or promises. Say what is wrong first, then what the executive promised last time, then ONE thing to offer. Do not claim a cause; a payment drop and a device fault are separate observations. Write in the requested language and script. No emojis, no markdown. Output only the brief.
 Language: ${LANG[l]}
 Facts: ${JSON.stringify(facts(s))}`;
- const t=await ask(p);return t?{text:t,src:"Sarvam"}:{text:offlineBrief(s,l),src:"Offline rules"}}
+ const t=await ask(p,"brief");return t?{text:t,src:"Sarvam"+(lastModel?" · "+lastModel:"")}:{text:offlineBrief(s,l),src:"Offline rules"}}
 async function extract(note,s){const t=s.open_ticket;
  const p=`You turn an executive's spoken visit note into structured facts for a CRM. Return ONLY valid JSON of this shape:
 {"summary":"one sentence in English","requests":[{"type":"replacement|repair|loan_info|upgrade|callback|other","detail":"string"}],"follow_up":{"needed":true,"when":"string or null"},"needs_clarification":false,"question":"ask ONE short question if the note is unclear, else null"}
 Rules: use only what the note says. Do not guess the merchant's intent. If the note does not say what the merchant wants, set needs_clarification true and ask one question. The note may be in English, Hindi or Kannada. Answer in English JSON.
 Shop: ${s.name} (open ticket: ${t?t.issue:"none"})
 Note: """${note}"""`;
- const raw=await ask(p);
- if(raw){try{const d=JSON.parse(raw.match(/\{[\s\S]*\}/)[0]);if(Array.isArray(d.requests)&&"needs_clarification" in d&&d.follow_up)return{ex:d,src:"Sarvam"}}catch(e){log("llm_fallback","Claude returned unreadable JSON, used offline rules")}}
+ const raw=await ask(p,"extract");
+ if(raw){try{const d=JSON.parse(raw.match(/\{[\s\S]*\}/)[0]);if(Array.isArray(d.requests)&&"needs_clarification" in d&&d.follow_up)return{ex:d,src:"Sarvam"+(lastModel?" · "+lastModel:"")}}catch(e){log("llm_fallback","Claude returned unreadable JSON, used offline rules")}}
  return{ex:offlineExtract(note),src:"Offline rules"}}
 function propose(s,ex){const a=[],t=s.open_ticket,k=new Set(ex.requests.map(r=>r.type));
  if(k.has("replacement")||k.has("repair"))a.push({key:`${s.id}:ticket:${t?t.id:"new"}`,type:"ticket_update",label:t?`Update existing ticket ${t.id}: replacement requested`:"Open a new ticket: replacement requested",needs_approval:true});
@@ -880,7 +880,7 @@ function shopHTML(id){const s=S.shops[id],[p,w]=score(s),t=s.open_ticket,u=ui[id
  <div class="row" style="margin-top:10px"><button class="primary" data-brief style="flex:2" ${u.busy?"disabled":""}>${u.busy==="brief"?"Writing...":"Get brief"}</button><button data-speak ${u.brief?"":"disabled"}>Play aloud</button></div>
  ${u.brief?`<div class="brief ${lc}">${esc(u.brief.text)}</div><div class="sub" style="margin-top:6px">Written by: ${esc(u.brief.src)}${u.speakMsg?" · "+esc(u.speakMsg):""}</div>`:""}</div>`;
  h+=`<div class="card"><h2>2. After the visit</h2><label for="note">Visit note (speak, type or paste; English, Hindi or Kannada)</label><button data-mic style="width:100%;margin-bottom:8px;${rec?'background:var(--bad-bg);color:var(--bad)':''}">${rec?"Stop recording":"Tap to speak"}</button>${u.micMsg?`<div class="sub" style="margin-bottom:6px">${esc(u.micMsg)}</div>`:""}<textarea id="note" placeholder="What did the merchant say?">${esc(u.note||"")}</textarea>
- <div class="samples">${Object.entries({clear:"Clear note",hindi:"Hindi note",unclear:"Unclear note",loan:"Loan, no device issue"}).map(([k,v])=>`<button data-sample="${k}">${v}</button>`).join("")}</div>
+ <div class="samples">${Object.entries({clear:"Sample: replacement + loan",hindi:"Sample: Hindi",unclear:"Sample: unclear note",loan:"Sample: loan only"}).map(([k,v])=>`<button data-sample="${k}">${v}</button>`).join("")}<button data-clearnote style="background:transparent;color:var(--mute)">Clear text</button></div>
  <button class="primary" data-extract ${u.busy?"disabled":""}>${u.busy==="ex"?"Reading note...":"Turn note into facts"}</button>`;
  if(u.ex){const ex=u.ex.ex;h+=`<div class="note"><b>What I understood</b> <span class="sub">(${esc(u.ex.src)})</span><br>${esc(ex.summary)}</div>`;
   if(ex.needs_clarification)h+=`<div class="note" style="background:var(--bad-bg)"><b>I need one answer first:</b> ${esc(ex.question)}<div class="sub">Nothing was written to the CRM.</div></div>`;
@@ -892,6 +892,7 @@ function bind(){document.querySelectorAll("[data-open]").forEach(e=>{const go=()
  if(view==="list")return;const id=view,s=S.shops[id],u=ui[id];
  const L=$("lang");if(L)L.onchange=()=>{u.lang=L.value;u.brief=null;render()};
  const N=$("note");if(N)N.oninput=()=>{u.note=N.value};
+ const cn=document.querySelector("[data-clearnote]");if(cn)cn.onclick=()=>{u.note="";u.ex=null;u.res=null;u.micMsg="";render()};
  document.querySelectorAll("[data-sample]").forEach(e=>e.onclick=()=>{u.note=SAMPLES[e.dataset.sample];u.ex=null;u.res=null;render()});
  const gb=document.querySelector("[data-brief]");if(gb)gb.onclick=async()=>{u.busy="brief";render();u.brief=await makeBrief(s,u.lang);u.busy=null;u.speakMsg="";log("brief",`Brief generated (${u.brief.src}, ${u.lang})`,id);render()};
  const sp=document.querySelector("[data-speak]");if(sp)sp.onclick=()=>speak(u);
