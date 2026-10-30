@@ -96,6 +96,26 @@ module.exports = async (req, res) => {
       await save(s); return res.status(200).json({ ok: true, shop: sh, day: s.day });
     }
 
+    if (op === "am_close" || op === "am_replace") {
+      const sh = s.shops[String(b.shop)], t = sh && sh.open_ticket;
+      if (!t || t.status !== "escalated") return res.status(400).json({ error: "nothing escalated" });
+      sh.updated_at = new Date().toISOString();
+      if (op === "am_close") {
+        const reason = String(b.reason || "").trim().slice(0, 200);
+        if (reason.length < 3) return res.status(400).json({ error: "reason required" });
+        const evidence = { ticket: t.id, ticket_state: "escalated", merchant_reply: "Still not working", closed_on_day: s.day, closed_by: "Area Manager", reason, proofs: (t.proofs || []).slice(-2).map((p) => ({ kind: p.kind, name: p.name, thumb: p.thumb })) };
+        s.closed.push({ id: t.id, shop: sh.id, shopName: sh.name, issue: t.issue, evidence });
+        sh.status = "resolved"; sh.promise_due = null; sh.open_ticket = null;
+        ev(s, "ticket_closed", sh.id, `Ticket ${t.id} CLOSED by the Area Manager: ${reason}`);
+        await save(s); return res.status(200).json({ closed: true, shop: sh });
+      }
+      t.status = "pending_approval"; sh.status = "pending_approval"; delete t.escalation;
+      t.proposal = { text: "Send another replacement (requested by Area Manager)", day: s.day, at: new Date().toISOString() };
+      (t.history = t.history || []).push(`Day ${s.day}: Area Manager asked for another replacement, waiting for Sales Head`);
+      ev(s, "approval_requested", sh.id, `Area Manager asked for another replacement for ${t.id}, sent to the Sales Head`);
+      await save(s); return res.status(200).json({ closed: false, shop: sh });
+    }
+
     if (op === "nextday") {
       s.day++; let n = 0;
       for (const sh of Object.values(s.shops)) {
@@ -121,8 +141,10 @@ module.exports = async (req, res) => {
         ev(s, "ticket_closed", sh.id, `Ticket ${t.id} CLOSED with evidence: delivered + merchant confirmed`);
         await save(s); return res.status(200).json({ closed: true, evidence, shop: sh });
       }
-      t.status = "open"; t.opened_days_ago += 1;
-      ev(s, "ticket_escalated", sh.id, `Ticket ${t.id} reopened and escalated to area manager (merchant says still failing)`);
+      t.status = "escalated"; t.opened_days_ago += 1; sh.status = "escalated"; sh.updated_at = new Date().toISOString();
+      t.escalation = { reason: "Merchant says the replacement is still not working", day: s.day, at: new Date().toISOString() };
+      (t.history = t.history || []).push(`Day ${s.day}: merchant says still failing, escalated to Area Manager`);
+      ev(s, "ticket_escalated", sh.id, `Ticket ${t.id} escalated to the Area Manager (merchant says still failing)`);
       await save(s); return res.status(200).json({ closed: false, shop: sh });
     }
     return res.status(400).json({ error: "unknown op" });
