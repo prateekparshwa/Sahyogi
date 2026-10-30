@@ -54,7 +54,7 @@ module.exports = async (req, res) => {
         else sh.open_ticket = { id: "T-" + (1100 + Object.keys(s.actions).length), issue: "Device issue", opened_days_ago: 0, status: "replacement_scheduled" };
         sh.status = "replacement_scheduled";
       } else if (b.type === "loan_link") { sh.loan.interested = true; }
-      else if (b.type === "revisit") { sh.promise_due = { text: "Confirm replacement delivery", due_day: s.day + 1 }; }
+      else if (b.type === "revisit") { sh.promise_due = { text: String(b.promise || "Confirm replacement delivery").slice(0, 120), due_day: s.day + 1 }; }
       else if (b.type === "crm_entry") { sh.last_visit = `Day ${s.day}: ${String(b.summary || "").slice(0, 300)}`; }
       s.actions[key] = { state: "done", shop: id }; s.writes++;
       ev(s, "write_ok", id, "Sahyogi: " + (b.label || b.type));
