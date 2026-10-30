@@ -799,7 +799,7 @@ const dd=t=>String(t==null?"":t).replace(/\bDay (-?\d+)\b/g,(m,n)=>dateFor(+n));
 function log(kind,msg,shop){S.audit.push({t:new Date().toLocaleTimeString("en-GB"),day:S.day,kind,shop,msg})}
 const drop=s=>Math.round(100*(s.payments_prev7-s.payments_last7)/Math.max(s.payments_prev7,1));
 function score(s){let p=0,w=[];const t=s.open_ticket;
- if(t&&["open","replacement_scheduled","awaiting_merchant_confirmation"].includes(t.status)){p+=40+Math.min(t.opened_days_ago,10)*2;w.push(`Open ticket ${t.id} (${t.issue}), ${t.opened_days_ago} days old`)}
+ if(t&&["open","replacement_scheduled","closure_review"].includes(t.status)){p+=40+Math.min(t.opened_days_ago,10)*2;w.push(`Open ticket ${t.id} (${t.issue}), ${t.opened_days_ago} days old`)}
  const pr=s.promise_due;if(pr&&pr.due_day<=S.day){p+=25;w.push(`Promise due: ${pr.text}`)}
  const d=drop(s);if(d>=25){p+=20;w.push(`Payments down ${d}% week on week`)}
  if(s.device.status!=="online"){p+=15;w.push(`Device ${s.device.status.replace(/_/g," ")} for ${s.device.offline_days} days`)}
@@ -817,13 +817,14 @@ function offlineBrief(s,l){const t=s.open_ticket;
  if(!t){return{en:`${s.name}: nothing urgent. Payments are steady. Ask how the device is working.`,hi:`${s.name}: कोई जरूरी मुद्दा नहीं। पेमेंट स्थिर है। डिवाइस के बारे में पूछिए।`,kn:`${s.name}: ತುರ್ತು ಸಮಸ್ಯೆ ಇಲ್ಲ. ಪಾವತಿ ಸ್ಥಿರವಾಗಿದೆ. ಸಾಧನ ಹೇಗಿದೆ ಎಂದು ಕೇಳಿ.`}[l]}
  const pr=(s.promise_due||{}).text||"an update";
  return OB[l].replace("{shop}",s.name).replace("{issue}",loc(t.issue,l)).replace("{days}",t.opened_days_ago).replace("{drop}",Math.max(drop(s),0)).replace("{promise}",loc(pr,l)).replace("{loan}",s.loan.eligible?LB[l]:"")}
-const FIXED=["is fixed","got fixed","fixed it","fixed now","is working now","working now","works now","is resolved","resolved","ठीक हो गया","ठीक हो गई","अब चल","ಸರಿಯಾಯಿತು","ಸರಿಯಾಗಿದೆ","ಈಗ ಕೆಲಸ"];
+const FIXED=["is fixed","got fixed","fixed it","fixed now","is working now","working now","works now","is resolved","resolved","working fine","works fine","is working","delivered and working","installed","ठीक हो गया","ठीक हो गई","अब चल","ಸರಿಯಾಯಿತು","ಸರಿಯಾಗಿದೆ","ಈಗ ಕೆಲಸ"];
 const KW={replacement:["replace","new speaker","new one","बदल","रिप्लेस","नया","ಬದಲ","ರಿಪ್ಲೇಸ್","ಹೊಸ"],repair:["repair","fix","ठीक","ಸರಿ"],loan_info:["loan","लोन","कर्ज","ಸಾಲ","ಲೋನ್"],upgrade:["upgrade","card machine","अपग्रेड","ಅಪ್‌ಗ್ರೇಡ್"]};
 const DET={resolved:"The problem was fixed during the visit",replacement:"Merchant wants a replacement device",repair:"Merchant wants the device repaired",loan_info:"Merchant asked about a loan",upgrade:"Merchant interested in an upgrade"};
 const WHEN=[["tomorrow","tomorrow"],["friday","Friday"],["monday","Monday"],["next week","next week"],["कल","tomorrow"],["ನಾಳೆ","tomorrow"]];
 function offlineExtract(note){const low=note.toLowerCase();const reqs=[];
- if(FIXED.some(w=>low.includes(w))&&!KW.replacement.some(w=>low.includes(w)))reqs.push({type:"resolved",detail:DET.resolved});
- else for(const [t,ws] of Object.entries(KW)) if(ws.some(w=>low.includes(w))) reqs.push({type:t,detail:DET[t]});
+ const done=FIXED.some(w=>low.includes(w))&&!["not ","n't","still","नहीं","ಇಲ್ಲ"].some(w=>low.includes(w));
+ if(done)reqs.push({type:"resolved",detail:DET.resolved});
+ for(const [t,ws] of Object.entries(KW)) if(!(done&&(t==="replacement"||t==="repair"))&&ws.some(w=>low.includes(w))) reqs.push({type:t,detail:DET[t]});
  const w=(WHEN.find(([k])=>low.includes(k))||[])[1]||null;
  if(!reqs.length) return{summary:"Visit note recorded, but the merchant's request is unclear.",requests:[],follow_up:{needed:false,when:null},needs_clarification:true,question:"What did the merchant ask for: a replacement, a repair, a loan, or something else?"};
  return{summary:reqs.map(r=>r.detail).join("; ")+(w?`. Available ${w}.`:"."),requests:reqs,follow_up:{needed:true,when:w||"next visit"},needs_clarification:false,question:null}}
@@ -843,7 +844,7 @@ Facts: ${JSON.stringify(facts(s))}`;
 async function extract(note,s){const t=s.open_ticket;
  const p=`You turn an executive's spoken visit note into structured facts for a CRM. Return ONLY valid JSON of this shape:
 {"summary":"one sentence in English","requests":[{"type":"replacement|repair|resolved|loan_info|upgrade|callback|other","detail":"string"}],"follow_up":{"needed":true,"when":"string or null"},"needs_clarification":false,"question":"ask ONE short question if the note is unclear, else null"}
-Rules: use type "resolved" when the note says the problem was already fixed or is working now (do NOT use "repair" or "replacement" for that). use only what the note says. Do not guess the merchant's intent. If the note does not say what the merchant wants, set needs_clarification true and ask one question. The note may be in English, Hindi or Kannada. Answer in English JSON.
+Rules: use type "resolved" when the note says the existing problem is fixed, or the delivered replacement works now (do NOT also add "repair" or "replacement" for that). If the note says it still does not work, do not use "resolved". use only what the note says. Do not guess the merchant's intent. If the note does not say what the merchant wants, set needs_clarification true and ask one question. The note may be in English, Hindi or Kannada. Answer in English JSON.
 Shop: ${s.name} (open ticket: ${t?t.issue:"none"})
 Note: """${note}"""`;
  const raw=await ask(p,"extract");
@@ -851,12 +852,12 @@ Note: """${note}"""`;
  return{ex:offlineExtract(note),src:"Offline rules"}}
 const Q=s=>(ui[s.id]&&ui[s.id].seq)||0;
 function propose(s,ex){const a=[],t=s.open_ticket,k=new Set(ex.requests.map(r=>r.type));
- if(k.has("resolved")&&t)a.push({key:`${s.id}:resolved:${t.id}:${Q(s)}`,type:"ticket_resolved",label:`Mark ticket ${t.id} as fixed on site and ask the merchant to confirm`,needs_approval:false});
+ if(k.has("resolved")&&t)a.push({key:`${s.id}:resolved:${t.id}:${Q(s)}`,type:"ticket_resolved",label:`Send ticket ${t.id} to the Area Manager to close (visit note says it is fixed)`,needs_approval:false});
  else if(k.has("replacement")||k.has("repair"))a.push({key:`${s.id}:ticket:${t?t.id:"new"}:${Q(s)}`,type:"ticket_update",label:t?`Update existing ticket ${t.id}: replacement requested`:"Open a new ticket: replacement requested",needs_approval:true});
  if(k.has("loan_info")){if(s.loan.eligible)a.push({key:`${s.id}:loan_link:${Q(s)}`,type:"loan_link",label:"Send the loan information link to the merchant (SMS)",needs_approval:true});
   else a.push({key:`${s.id}:loan_blocked`,type:"blocked",label:"Merchant asked about a loan, but is not eligible. No link will be sent.",needs_approval:false})}
  if(ex.needs_clarification)a.push({key:`${s.id}:revisit:${S.day}:${Q(s)}`,type:"revisit",label:"Book a revisit to ask what the merchant needs",promise:"Find out what the merchant needs",needs_approval:false});
- else if(ex.follow_up&&ex.follow_up.needed)a.push({key:`${s.id}:revisit:${S.day}:${Q(s)}`,type:"revisit",label:`Book a revisit: ${ex.follow_up.when||"next visit"}`,promise:k.has("resolved")?"Confirm the fix with the merchant":k.has("replacement")||k.has("repair")?"Confirm replacement delivery":k.has("loan_info")?"Follow up on the loan enquiry":"Follow up with the merchant",needs_approval:false});
+ else if(ex.follow_up&&ex.follow_up.needed)a.push({key:`${s.id}:revisit:${S.day}:${Q(s)}`,type:"revisit",label:`Book a revisit: ${ex.follow_up.when||"next visit"}`,promise:k.has("resolved")?"Check the fix is holding":k.has("replacement")||k.has("repair")?"Confirm replacement delivery":k.has("loan_info")?"Follow up on the loan enquiry":"Follow up with the merchant",needs_approval:false});
  a.push({key:`${s.id}:crm:${S.day}:${Q(s)}`,type:"crm_entry",label:"Save the visit note to the CRM",needs_approval:false});return a}
 function execute(id,act,ex){const s=S.shops[id],key=act.key;
  if(S.actions[key]&&S.actions[key].state==="done"){log("duplicate_blocked","Skipped duplicate: "+act.label,id);return{key,state:"duplicate",label:act.label}}
@@ -864,7 +865,7 @@ function execute(id,act,ex){const s=S.shops[id],key=act.key;
  if(S.outage){S.actions[key]={state:"pending",act,shop:id,ex};if(!S.pending.includes(key))S.pending.push(key);log("write_pending","CRM unavailable. Kept pending: "+act.label,id);return{key,state:"pending",label:act.label}}
  const t=s.open_ticket;
  if(act.type==="ticket_update"){if(t){t.status="pending_approval";t.proposal={text:act.label};(t.history=t.history||[]).push(`Day ${S.day}: replacement proposed, waiting for Sales Head`)}else{s.open_ticket={id:"T-"+(1100+Object.keys(S.actions).length),issue:"Device issue",opened_days_ago:0,status:"pending_approval",proposal:{text:act.label}}}s.status="pending_approval"}
- else if(act.type==="ticket_resolved"){if(t){t.status="awaiting_merchant_confirmation";t.fixed_on_site=true;(t.history=t.history||[]).push(`Day ${S.day}: fixed on site, waiting for merchant`);s.status="awaiting_merchant_confirmation"}}
+ else if(act.type==="ticket_resolved"){if(t){t.status="closure_review";t.review={suggestion:"close",reason:`The executive's visit note says the problem is fixed${ex.note?`: "${ex.note}"`:""}.`};(t.history=t.history||[]).push(`Day ${S.day}: visit note says fixed, waiting for the Area Manager`);s.status="closure_review"}}
  else if(act.type==="loan_link")s.loan.interested=true;
  else if(act.type==="revisit")s.promise_due={text:act.promise||"Confirm replacement delivery",due_day:S.day+1};
  else if(act.type==="crm_entry")s.last_visit=`Day ${S.day}: ${ex.summary}`;
@@ -883,10 +884,10 @@ function shopHTML(id){const s=S.shops[id],[p,w]=score(s),t=s.open_ticket,u=ui[id
  let h=`<button class="back" data-back>← All shops</button><div class="card"><b style="font-size:19px">${esc(s.name)}</b><div class="sub">${esc(s.owner)} · ${esc(s.area)} · ${esc(s.phone_masked)}</div><a class="mapbtn" href="${mapURL(s)}" target="_blank" rel="noopener">${PIN} Directions to this shop</a>
  <div class="grid"><div class="tile ${d>=25?"bad":""}"><i>Payments vs last week</i><b>${d>0?"-"+d:"+"+Math.abs(d)}%</b></div><div class="tile"><i>Device</i><b>${esc(dev)}</b></div><div class="tile"><i>Ticket</i><b>${t?esc(t.id)+" ("+esc(t.status.replace(/_/g," "))+")":"None"}</b></div><div class="tile"><i>Loan</i><b>${s.loan.eligible?(s.loan.interested?"Interested":"Eligible"):"Not eligible"}</b></div></div>
  ${w.length?`<b class="sub">Why this shop</b><ul class="why">${w.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}<div class="sub" style="margin-top:8px">Last visit: ${esc(dd(s.last_visit))}</div></div>`;
- if(t&&t.status==="awaiting_merchant_confirmation")h+=`<div class="card"><h2>Next-day check</h2><div class="sub">${t.fixed_on_site?`The executive reports ${esc(t.id)} is fixed on site.`:`Ticket ${esc(t.id)} shows the replacement as delivered.`} Sahyogi does not close it yet. It asks the merchant first.</div>${ui[id+"c"]?`<div class="note">${esc(ui[id+"c"])}</div>`:`<div class="row" style="margin-top:10px"><button data-conf="1">Merchant: "Yes, the speaker works"</button><button data-conf="0">Merchant: "Still not working"</button></div>`}</div>`;
+ if(t&&t.delivered&&t.status==="replacement_scheduled")h+=`<div class="note" style="background:var(--ok-bg)"><b>Replacement delivered.</b> Check it on this visit. If it works, say so in your note and Sahyogi sends the ticket to the Area Manager to close.</div>`;
  if(t&&t.status==="pending_approval")h+=`<div class="note" style="background:var(--warn-bg)"><b>Waiting for the Sales Head.</b> ${esc((t.proposal||{}).text||"")}<div class="sub">The replacement is not scheduled until the Sales Head accepts it in the CRM.</div></div>`;
  if(t&&t.status==="replacement_scheduled")h+=`<div class="note" style="background:var(--ok-bg)"><b>Sales Head approved.</b> Replacement is scheduled.</div>`;
- if(t&&t.status==="escalated")h+=`<div class="note" style="background:var(--bad-bg)"><b>Escalated to the Area Manager.</b> The merchant says it is still not working.<div class="sub">The Area Manager will close the ticket or ask for another replacement. You will see it here.</div></div>`;
+ if(t&&t.status==="closure_review")h+=`<div class="note" style="background:var(--ok-bg)"><b>Sent to the Area Manager to close.</b> AI suggests closing: ${esc((t.review||{}).reason||"")}<div class="sub">Add a photo or video proof below if you have one. The Area Manager closes the ticket in the CRM.</div></div>`;
  if(t&&t.denied)h+=`<div class="note" style="background:var(--bad-bg)"><b>Sales Head denied the replacement.</b> Reason: ${esc(t.denied.reason)}<div class="sub">Add a note with another solution and push it to the CRM again.</div></div>`;
  const lc=u.lang;
  h+=`<div class="card"><h2>1. Pre-visit brief</h2><label for="lang">Language</label><select id="lang"><option value="kn"${lc==="kn"?" selected":""}>Kannada</option><option value="hi"${lc==="hi"?" selected":""}>Hindi</option><option value="en"${lc==="en"?" selected":""}>English</option></select>
@@ -917,7 +918,7 @@ function bind(){document.querySelectorAll("[data-open]").forEach(e=>{const go=()
  const gb=document.querySelector("[data-brief]");if(gb)gb.onclick=async()=>{u.busy="brief";render();u.brief=await makeBrief(s,u.lang);u.busy=null;u.speakMsg="";log("brief",`Brief generated (${u.brief.src}, ${u.lang})`,id);render()};
  const sp=document.querySelector("[data-speak]");if(sp)sp.onclick=()=>speak(u);
  const mc=document.querySelector("[data-mic]");if(mc)mc.onclick=()=>toggleMic(u);
- const ge=document.querySelector("[data-extract]");if(ge)ge.onclick=async()=>{const n=(u.note||"").trim();if(n.length<3)return;u.seq=(u.seq||0)+1;u.skip={};u.busy="ex";u.res=null;render();const r=await extract(n,s);u.busy=null;u.ex=r;u.acts=propose(s,r.ex);log("note","Visit note captured. Clarification needed: "+r.ex.needs_clarification,id);render()};
+ const ge=document.querySelector("[data-extract]");if(ge)ge.onclick=async()=>{const n=(u.note||"").trim();if(n.length<3)return;u.seq=(u.seq||0)+1;u.skip={};u.busy="ex";u.res=null;render();const r=await extract(n,s);u.busy=null;r.ex.note=n.slice(0,240);u.ex=r;u.acts=propose(s,r.ex);log("note","Visit note captured. Clarification needed: "+r.ex.needs_clarification,id);render()};
  const pf=document.querySelector("[data-proof]");if(pf)pf.onchange=async()=>{const f=pf.files[0];if(!f)return;const kind=f.type.startsWith("video")?"video":"photo";u.proofMsg="Preparing "+kind+"...";render();
   try{const th=await makeThumb(f);
    if(crmOn){const r=await crm({op:"proof",shop:id,kind,name:f.name,size:f.size,thumb:th});if(r.status===503)u.proofMsg="CRM is unavailable. Try again after it is restored.";else if(!r.ok)throw new Error("HTTP "+r.status);else{const j=await r.json();S.shops[id]=j.shop;u.proofMsg="Proof pushed to the CRM.";log("proof","Proof ("+kind+") pushed to ticket "+j.shop.open_ticket.id,id)}}
@@ -927,7 +928,7 @@ function bind(){document.querySelectorAll("[data-open]").forEach(e=>{const go=()
  document.querySelectorAll("[data-skip]").forEach(e=>e.onclick=()=>{u.skip=u.skip||{};u.skip[e.dataset.skip]=!u.skip[e.dataset.skip];render()});
  const cl=document.querySelector("[data-clar]");if(cl)cl.onclick=async()=>{const a=(($("clar")||{}).value||"").trim();if(a.length<2)return;u.note=(u.note||"")+" The merchant wants: "+a;if(ge)await ge.onclick()};
  const ap=document.querySelector("[data-approve]");if(ap)ap.onclick=async()=>{ap.disabled=true;u.res=[];for(const a of propose(s,u.ex.ex)){if(u.skip&&u.skip[a.key])continue;u.res.push(await executeAny(id,a,u.ex.ex))}render()};
- document.querySelectorAll("[data-conf]").forEach(e=>e.onclick=()=>confirmMerchant(id,e.dataset.conf==="1"))}
+ }
 async function speak(u){const l=u.lang;u.speakMsg="Generating voice...";render();
  try{if(!sarvamOn)throw new Error("offline");const r=await fetch("/api/tts",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({text:u.brief.text,lang:l})});if(!r.ok)throw new Error("HTTP "+r.status);
   const au=new Audio(URL.createObjectURL(await r.blob()));await au.play();u.speakMsg="Sarvam voice";log("tts","Sarvam voice played ("+l+")",view)}
@@ -944,10 +945,7 @@ async function toggleMic(u){if(rec){rec.stop();return}
    catch(e){u.micMsg="Could not transcribe. Type the note or use a sample."}render()};
   rec.start();u.micMsg="Recording... tap again to stop.";render()}
  catch(e){u.micMsg="Microphone blocked. Allow it in the browser, or type the note.";render()}}
-function confirmLocal(id,yes){const s=S.shops[id],t=s.open_ticket;if(!t||t.status!=="awaiting_merchant_confirmation")return;
- if(yes){const ev={ticket:t.id,ticket_state:t.fixed_on_site?"fixed on site":"delivered",merchant_reply:"Yes, the speaker works",closed_on_day:S.day};t.status="closed";s.status="resolved";s.promise_due=null;s.open_ticket=null;log("closed",`Issue closed with evidence: ticket ${t.id} delivered and merchant confirmed`,id);ui[id+"c"]="Closed with evidence: "+JSON.stringify(ev)}
- else{t.status="escalated";t.opened_days_ago+=1;log("escalated",`Merchant says it still fails. Ticket ${t.id} escalated to the Area Manager`,id);ui[id+"c"]="Escalated to the Area Manager."}render()}
-function nextLocal(){S.day++;let n=0;for(const s of Object.values(S.shops)){const t=s.open_ticket;if(t&&t.status==="replacement_scheduled"){t.status="awaiting_merchant_confirmation";(t.history=t.history||[]).push(`Day ${S.day}: replacement delivered per ticket system`);s.status="awaiting_merchant_confirmation";s.device={model:s.device.model,status:"online",offline_days:0};n++;log("status_check","Ticket shows replacement delivered. Asking the merchant to confirm.",s.id)}}return n}
+function nextLocal(){S.day++;let n=0;for(const s of Object.values(S.shops)){const t=s.open_ticket;if(t&&t.status==="replacement_scheduled"&&!t.delivered){t.delivered=true;(t.history=t.history||[]).push(`Day ${S.day}: replacement delivered per ticket system`);s.device={model:s.device.model,status:"online",offline_days:0};n++;log("status_check","Ticket shows replacement delivered. Verify it on the visit.",s.id)}}return n}
 function retryLocal(){if(S.outage)return"CRM is still down. Nothing to retry.";let n=0;for(const k of [...S.pending]){const r=S.actions[k];delete S.actions[k];S.pending.splice(S.pending.indexOf(k),1);execute(r.shop,r.act,r.ex);n++}return n?`${n} pending update(s) completed.`:"Nothing pending."}
 function digestText(){const r=ranked(),open=r.filter(x=>x.open_ticket),risk=r.slice(0,5).filter(x=>!S.visited.includes(x.id)&&x.score>=30).map(x=>x.name),done=Object.values(S.actions).filter(a=>a.state==="done").length,closed=S.audit.filter(a=>a.kind==="closed").length;
  return [`${dateLabel(S.day)} summary`,`Shops visited: ${S.visited.length}`,`Actions completed: ${done}  |  still pending: ${S.pending.length}`,`Issues closed with evidence: ${closed}`,`Open issues: ${open.length} (${open.slice(0,4).map(x=>x.name).join(", ")||"none"})`,`Shops needing a visit soon: ${risk.join(", ")||"none"}`].join("\n")}
@@ -974,7 +972,7 @@ function markPending(id,act,ex){const key=act.key;S.actions[key]={state:"pending
 async function executeCRM(id,act,ex){const key=act.key;
  if(S.actions[key]&&S.actions[key].state==="done"){log("duplicate_blocked","Skipped duplicate: "+act.label,id);return{key,state:"duplicate",label:act.label}}
  if(act.type==="blocked")return{key,state:"blocked",label:act.label};
- try{const r=await crm({op:"action",key,type:act.type,shop:id,label:act.label,summary:ex.summary,promise:act.promise});
+ try{const r=await crm({op:"action",key,type:act.type,shop:id,label:act.label,summary:ex.summary,note:ex.note||"",promise:act.promise});
   if(r.status===503)return markPending(id,act,ex);if(!r.ok)throw new Error("HTTP "+r.status);
   const j=await r.json();S.shops[id]=j.shop;S.day=j.day;
   if(j.state==="duplicate"){log("duplicate_blocked","CRM ignored a duplicate write: "+act.label,id);return{key,state:"duplicate",label:act.label}}
@@ -984,14 +982,9 @@ const executeAny=(id,act,ex)=>crmOn?executeCRM(id,act,ex):Promise.resolve(execut
 async function retry(){if(!crmOn)return retryLocal();if(!S.pending.length)return"Nothing pending.";let n=0;for(const k of [...S.pending]){const rec=S.actions[k];delete S.actions[k];S.pending.splice(S.pending.indexOf(k),1);const r=await executeCRM(rec.shop,rec.act,rec.ex);if(r.state!=="pending")n++}
  return n?`${n} pending update(s) completed.`:"CRM is still unavailable. Updates stay pending."}
 async function nextDay(){if(!crmOn)return nextLocal();try{const r=await crm({op:"nextday"});const j=await r.json();S.shops=j.shops;S.day=j.day;
- for(const s of Object.values(S.shops)){const t=s.open_ticket;if(t&&t.status==="awaiting_merchant_confirmation")log("status_check","Ticket shows replacement delivered. Asking the merchant to confirm.",s.id)}return j.changed}catch(e){return 0}}
+ for(const s of Object.values(S.shops)){const t=s.open_ticket;if(t&&t.delivered&&t.status==="replacement_scheduled")log("status_check","Ticket shows replacement delivered. Verify it on the visit.",s.id)}return j.changed}catch(e){return 0}}
 async function setOutage(on){if(!crmOn){S.outage=on;log("outage",on?"CRM outage simulated ON":"CRM restored");return}await crm({op:"outage",on});S.outage=on;log("outage",on?"CRM outage simulated ON":"CRM restored")}
 async function resetAll(){if(crmOn)await crm({op:"reset"});fresh();await refreshFromCRM()}
-async function confirmMerchant(id,yes){if(!crmOn)return confirmLocal(id,yes);const t=S.shops[id].open_ticket;if(!t||t.status!=="awaiting_merchant_confirmation")return;
- try{const r=await crm({op:"confirm",shop:id,positive:yes});if(!r.ok)throw 0;const j=await r.json();S.shops[id]=j.shop;
-  if(yes){log("closed",`Issue closed with evidence: ticket ${t.id} delivered and merchant confirmed`,id);const n=(j.evidence.proofs||[]).length;ui[id+"c"]=`Closed with evidence: ticket ${j.evidence.ticket} ${j.evidence.ticket_state}, ${j.evidence.approved_by}, merchant said "${j.evidence.merchant_reply}"${n?", "+n+" proof(s) attached":""}.`}
-  else{log("escalated",`Merchant says it still fails. Ticket ${t.id} escalated to the Area Manager`,id);ui[id+"c"]="Escalated to the Area Manager."}}
- catch(e){ui[id+"c"]="CRM did not respond. Try again."}render()}
 fresh();render();refreshFromCRM().then(render);
 let lastSig="";setInterval(async()=>{if(!crmOn||document.hidden||rec)return;const ae=document.activeElement;if(ae&&(ae.tagName==="TEXTAREA"||ae.tagName==="INPUT"))return;await refreshFromCRM();const sig=Object.values(S.shops).map(s=>s.open_ticket?s.open_ticket.id+s.open_ticket.status+(s.open_ticket.proofs||[]).length+(s.open_ticket.denied?"d":""):"-").join("|")+S.day;if(sig!==lastSig){const first=lastSig==="";lastSig=sig;if(!first)render()}},4000);
 (async()=>{try{const r=await fetch("/api/chat");const j=await r.json();sarvamOn=!!j.sarvam;renderHead()}catch(e){}})();
