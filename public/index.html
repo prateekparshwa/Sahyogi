@@ -48,6 +48,7 @@ pre{white-space:pre-wrap;font:13px/1.5 Manrope,sans-serif;margin:0}
 .aud{font-size:13px;padding:7px 0;border-top:1px solid var(--line)}.aud time{color:var(--mute);margin-right:6px}
 .toggle{display:flex;gap:8px;align-items:center;font-weight:600;color:var(--ink);margin:10px 0 0}
 .toggle input{width:18px;height:18px;accent-color:var(--brand)}
+.mapbtn{display:inline-flex;align-items:center;gap:6px;margin-top:8px;padding:6px 12px;border-radius:99px;border:1px solid var(--brand);color:var(--brand);font-size:13px;font-weight:700;text-decoration:none}
 .back{background:none;padding:12px 0 0;color:var(--brand)}
 html{-webkit-text-size-adjust:100%;overscroll-behavior-y:none}button,.shop{-webkit-tap-highlight-color:transparent;touch-action:manipulation}
 body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
@@ -850,7 +851,8 @@ function propose(s,ex){const a=[],t=s.open_ticket,k=new Set(ex.requests.map(r=>r
  if(k.has("replacement")||k.has("repair"))a.push({key:`${s.id}:ticket:${t?t.id:"new"}`,type:"ticket_update",label:t?`Update existing ticket ${t.id}: replacement requested`:"Open a new ticket: replacement requested",needs_approval:true});
  if(k.has("loan_info")){if(s.loan.eligible)a.push({key:`${s.id}:loan_link`,type:"loan_link",label:"Send the loan information link to the merchant (SMS)",needs_approval:true});
   else a.push({key:`${s.id}:loan_blocked`,type:"blocked",label:"Merchant asked about a loan, but is not eligible. No link will be sent.",needs_approval:false})}
- if(ex.follow_up&&ex.follow_up.needed)a.push({key:`${s.id}:revisit:${S.day}`,type:"revisit",label:`Book a revisit: ${ex.follow_up.when||"next visit"}`,needs_approval:false});
+ if(ex.needs_clarification)a.push({key:`${s.id}:revisit:${S.day}`,type:"revisit",label:"Book a revisit to ask what the merchant needs",promise:"Find out what the merchant needs",needs_approval:false});
+ else if(ex.follow_up&&ex.follow_up.needed)a.push({key:`${s.id}:revisit:${S.day}`,type:"revisit",label:`Book a revisit: ${ex.follow_up.when||"next visit"}`,needs_approval:false});
  a.push({key:`${s.id}:crm:${S.day}`,type:"crm_entry",label:"Save the visit note to the CRM",needs_approval:false});return a}
 function execute(id,act,ex){const s=S.shops[id],key=act.key;
  if(S.actions[key]&&S.actions[key].state==="done"){log("duplicate_blocked","Skipped duplicate: "+act.label,id);return{key,state:"duplicate",label:act.label}}
@@ -859,7 +861,7 @@ function execute(id,act,ex){const s=S.shops[id],key=act.key;
  const t=s.open_ticket;
  if(act.type==="ticket_update"){if(t){t.status="replacement_scheduled";(t.history=t.history||[]).push(`Day ${S.day}: replacement approved by executive`)}else{s.open_ticket={id:"T-"+(1100+Object.keys(S.actions).length),issue:"Device issue",opened_days_ago:0,status:"replacement_scheduled"}}s.status="replacement_scheduled"}
  else if(act.type==="loan_link")s.loan.interested=true;
- else if(act.type==="revisit")s.promise_due={text:"Confirm replacement delivery",due_day:S.day+1};
+ else if(act.type==="revisit")s.promise_due={text:act.promise||"Confirm replacement delivery",due_day:S.day+1};
  else if(act.type==="crm_entry")s.last_visit=`Day ${S.day}: ${ex.summary}`;
  S.actions[key]={state:"done",act,shop:id};const i=S.pending.indexOf(key);if(i>=0)S.pending.splice(i,1);
  if(!S.visited.includes(id))S.visited.push(id);log("action_done",act.label,id);return{key,state:"done",label:act.label}}
@@ -868,10 +870,12 @@ const SAMPLES={clear:"Speaker is dead. He wants a replacement and is also asking
 function renderHead(){document.querySelectorAll("[data-tab]").forEach(b=>b.classList.toggle("on",b.dataset.tab==="visits"));const cc=$("crm");cc.hidden=!crmOn;if(crmOn){cc.textContent=crmStore==="redis"?"CRM connected":"CRM (temporary)";cc.className="chip"+(crmStore==="redis"?"":" warn")}$("day").textContent=dateLabel(S.day);const m=$("mode");m.textContent=useAI&&sarvamOn?"Sarvam on":"Offline rules";m.className="chip"+(useAI&&sarvamOn?"":" warn");
  if(S.outage){m.textContent="CRM outage";m.className="chip bad"}}
 function render(){renderHead();const a=$("app");a.innerHTML=view==="list"?listHTML():shopHTML(view);bind()}
-function listHTML(){return `<h2 style="margin-top:16px">Today's visits</h2><div class="sub">Ranked by plain rules. Tap a shop to see why.</div>`+ranked().map((s,i)=>`<div class="card shop" tabindex="0" role="button" data-open="${s.id}"><div class="rank">${i+1}</div><div class="body"><b>${esc(s.name)}</b><div class="sub">${esc(s.owner)} · ${esc(s.area)}${s.visited||S.visited.includes(s.id)?' · <span class="tag done">VISITED</span>':''}</div>${s.why.length?`<ul>${s.why.slice(0,2).map(w=>`<li>${esc(w)}</li>`).join("")}</ul>`:""}</div><div class="score">${s.score}<span>score</span></div></div>`).join("")}
+const mapURL=s=>"https://www.google.com/maps/dir/?api=1&travelmode=driving&destination="+encodeURIComponent(s.name+", "+s.area+", Bengaluru");
+const PIN='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 22s7-6.2 7-12a7 7 0 0 0-14 0c0 5.8 7 12 7 12z"/><circle cx="12" cy="10" r="2.5"/></svg>';
+function listHTML(){return `<h2 style="margin-top:16px">Today's visits</h2><div class="sub">Ranked by plain rules. Tap a shop to see why.</div>`+ranked().map((s,i)=>`<div class="card shop" tabindex="0" role="button" data-open="${s.id}"><div class="rank">${i+1}</div><div class="body"><b>${esc(s.name)}</b><div class="sub">${esc(s.owner)} · ${esc(s.area)}${s.visited||S.visited.includes(s.id)?' · <span class="tag done">VISITED</span>':''}</div>${s.why.length?`<ul>${s.why.slice(0,2).map(w=>`<li>${esc(w)}</li>`).join("")}</ul>`:""}<a class="mapbtn" href="${mapURL(s)}" target="_blank" rel="noopener">${PIN} Directions</a></div><div class="score">${s.score}<span>score</span></div></div>`).join("")}
 function shopHTML(id){const s=S.shops[id],[p,w]=score(s),t=s.open_ticket,u=ui[id]||(ui[id]={lang:s.language});const d=drop(s);
  const dev=s.device.status==="online"?`${s.device.model}: online`:`${s.device.model}: ${s.device.status.replace(/_/g," ")}`;
- let h=`<button class="back" data-back>← All shops</button><div class="card"><b style="font-size:19px">${esc(s.name)}</b><div class="sub">${esc(s.owner)} · ${esc(s.area)} · ${esc(s.phone_masked)}</div>
+ let h=`<button class="back" data-back>← All shops</button><div class="card"><b style="font-size:19px">${esc(s.name)}</b><div class="sub">${esc(s.owner)} · ${esc(s.area)} · ${esc(s.phone_masked)}</div><a class="mapbtn" href="${mapURL(s)}" target="_blank" rel="noopener">${PIN} Directions to this shop</a>
  <div class="grid"><div class="tile ${d>=25?"bad":""}"><i>Payments vs last week</i><b>${d>0?"-"+d:"+"+Math.abs(d)}%</b></div><div class="tile"><i>Device</i><b>${esc(dev)}</b></div><div class="tile"><i>Ticket</i><b>${t?esc(t.id)+" ("+esc(t.status.replace(/_/g," "))+")":"None"}</b></div><div class="tile"><i>Loan</i><b>${s.loan.eligible?(s.loan.interested?"Interested":"Eligible"):"Not eligible"}</b></div></div>
  ${w.length?`<b class="sub">Why this shop</b><ul class="why">${w.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}<div class="sub" style="margin-top:8px">Last visit: ${esc(dd(s.last_visit))}</div></div>`;
  if(t&&t.status==="awaiting_merchant_confirmation")h+=`<div class="card"><h2>Next-day check</h2><div class="sub">Ticket ${esc(t.id)} shows the replacement as delivered. Sahyogi does not close it yet. It asks the merchant first.</div>${ui[id+"c"]?`<div class="note">${esc(ui[id+"c"])}</div>`:`<div class="row" style="margin-top:10px"><button data-conf="1">Merchant: "Yes, the speaker works"</button><button data-conf="0">Merchant: "Still not working"</button></div>`}</div>`;
@@ -883,11 +887,12 @@ function shopHTML(id){const s=S.shops[id],[p,w]=score(s),t=s.open_ticket,u=ui[id
  <div class="samples">${Object.entries({clear:"Sample: replacement + loan",hindi:"Sample: Hindi",unclear:"Sample: unclear note",loan:"Sample: loan only"}).map(([k,v])=>`<button data-sample="${k}">${v}</button>`).join("")}<button data-clearnote style="background:transparent;color:var(--mute)">Clear text</button></div>
  <button class="primary" data-extract ${u.busy?"disabled":""}>${u.busy==="ex"?"Reading note...":"Turn note into facts"}</button>`;
  if(u.ex){const ex=u.ex.ex;h+=`<div class="note"><b>What I understood</b> <span class="sub">(${esc(u.ex.src)})</span><br>${esc(ex.summary)}</div>`;
-  if(ex.needs_clarification)h+=`<div class="note" style="background:var(--bad-bg)"><b>I need one answer first:</b> ${esc(ex.question)}<div class="sub">Nothing was written to the CRM.</div></div>`;
-  else{h+=`<div class="sub" style="margin-top:10px"><b>Approve what I should do</b></div>`+u.acts.map(a=>`<label class="act" style="margin:0;color:var(--ink);font-weight:600"><input type="checkbox" data-key="${esc(a.key)}" ${a.type==="blocked"?"disabled":"checked"}><span>${esc(a.label)}${a.needs_approval?' <span class="sub">(needs your approval)</span>':""}</span></label>`).join("")+`<button class="primary" data-approve style="margin-top:10px">Approve and run</button>`}}
+  const list=u.acts.map(a=>`<label class="act" style="margin:0;color:var(--ink);font-weight:600"><input type="checkbox" data-key="${esc(a.key)}" ${a.type==="blocked"?"disabled":"checked"}><span>${esc(a.label)}${a.needs_approval?' <span class="sub">(needs your approval)</span>':""}</span></label>`).join("");
+  if(ex.needs_clarification)h+=`<div class="note" style="background:var(--bad-bg)"><b>One question:</b> ${esc(ex.question)}<textarea id="clar" rows="2" placeholder="Type the answer (optional)" style="margin:8px 0 0"></textarea><button data-clar style="width:100%;margin-top:6px">Answer and re-read the note</button></div><div class="sub" style="margin-top:10px"><b>Or skip the question and push what I know</b></div>`+list+`<button class="primary" data-approve style="margin-top:10px">Push to CRM anyway</button>`;
+  else h+=`<div class="sub" style="margin-top:10px"><b>Approve what I should do</b></div>`+list+`<button class="primary" data-approve style="margin-top:10px">Approve and run</button>`}
  if(u.res)h+=u.res.map(r=>`<div class="res"><span class="tag ${r.state}">${{done:"DONE",pending:"PENDING",duplicate:"DUPLICATE PREVENTED",blocked:"BLOCKED"}[r.state]}</span><span>${esc(r.label)}</span></div>`).join("");
  return h+"</div>"}
-function bind(){document.querySelectorAll("[data-open]").forEach(e=>{const go=()=>{view=e.dataset.open;render();scrollTo(0,0)};e.onclick=go;e.onkeydown=ev=>{if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();go()}}});
+function bind(){document.querySelectorAll("[data-open]").forEach(e=>{const go=()=>{view=e.dataset.open;render();scrollTo(0,0)};e.onclick=go;e.onkeydown=ev=>{if(ev.target!==e)return;if(ev.key==="Enter"||ev.key===" "){ev.preventDefault();go()}}});
  const b=document.querySelector("[data-back]");if(b)b.onclick=()=>{view="list";render()};
  if(view==="list")return;const id=view,s=S.shops[id],u=ui[id];
  const L=$("lang");if(L)L.onchange=()=>{u.lang=L.value;u.brief=null;render()};
@@ -897,7 +902,8 @@ function bind(){document.querySelectorAll("[data-open]").forEach(e=>{const go=()
  const gb=document.querySelector("[data-brief]");if(gb)gb.onclick=async()=>{u.busy="brief";render();u.brief=await makeBrief(s,u.lang);u.busy=null;u.speakMsg="";log("brief",`Brief generated (${u.brief.src}, ${u.lang})`,id);render()};
  const sp=document.querySelector("[data-speak]");if(sp)sp.onclick=()=>speak(u);
  const mc=document.querySelector("[data-mic]");if(mc)mc.onclick=()=>toggleMic(u);
- const ge=document.querySelector("[data-extract]");if(ge)ge.onclick=async()=>{const n=(u.note||"").trim();if(n.length<3)return;u.busy="ex";u.res=null;render();const r=await extract(n,s);u.busy=null;u.ex=r;u.acts=r.ex.needs_clarification?[]:propose(s,r.ex);log("note","Visit note captured. Clarification needed: "+r.ex.needs_clarification,id);render()};
+ const ge=document.querySelector("[data-extract]");if(ge)ge.onclick=async()=>{const n=(u.note||"").trim();if(n.length<3)return;u.busy="ex";u.res=null;render();const r=await extract(n,s);u.busy=null;u.ex=r;u.acts=propose(s,r.ex);log("note","Visit note captured. Clarification needed: "+r.ex.needs_clarification,id);render()};
+ const cl=document.querySelector("[data-clar]");if(cl)cl.onclick=async()=>{const a=(($("clar")||{}).value||"").trim();if(a.length<2)return;u.note=(u.note||"")+" The merchant wants: "+a;if(ge)await ge.onclick()};
  const ap=document.querySelector("[data-approve]");if(ap)ap.onclick=async()=>{const keys=[...document.querySelectorAll("[data-key]:checked")].map(e=>e.dataset.key);ap.disabled=true;u.res=[];for(const a of propose(s,u.ex.ex)){if(keys.includes(a.key)||a.type==="blocked")u.res.push(await executeAny(id,a,u.ex.ex))}render()};
  document.querySelectorAll("[data-conf]").forEach(e=>e.onclick=()=>confirmMerchant(id,e.dataset.conf==="1"))}
 async function speak(u){const l=u.lang;u.speakMsg="Generating voice...";render();
@@ -946,7 +952,7 @@ function markPending(id,act,ex){const key=act.key;S.actions[key]={state:"pending
 async function executeCRM(id,act,ex){const key=act.key;
  if(S.actions[key]&&S.actions[key].state==="done"){log("duplicate_blocked","Skipped duplicate: "+act.label,id);return{key,state:"duplicate",label:act.label}}
  if(act.type==="blocked")return{key,state:"blocked",label:act.label};
- try{const r=await crm({op:"action",key,type:act.type,shop:id,label:act.label,summary:ex.summary});
+ try{const r=await crm({op:"action",key,type:act.type,shop:id,label:act.label,summary:ex.summary,promise:act.promise});
   if(r.status===503)return markPending(id,act,ex);if(!r.ok)throw new Error("HTTP "+r.status);
   const j=await r.json();S.shops[id]=j.shop;S.day=j.day;
   if(j.state==="duplicate"){log("duplicate_blocked","CRM ignored a duplicate write: "+act.label,id);return{key,state:"duplicate",label:act.label}}
