@@ -56,6 +56,11 @@ module.exports = async (req, res) => {
         else sh.open_ticket = { id: "T-" + (1100 + Object.keys(s.actions).length), issue: "Device issue", opened_days_ago: 0, status: "pending_approval", proposal: prop, history: [note] };
         sh.status = "pending_approval";
         ev(s, "approval_requested", id, `Replacement for ${sh.open_ticket.id} sent to the Sales Head for approval`);
+      } else if (b.type === "ticket_resolved") {
+        if (!t) { await save(s); return res.status(400).json({ error: "no open ticket to resolve" }); }
+        t.status = "awaiting_merchant_confirmation"; t.fixed_on_site = true; sh.status = "awaiting_merchant_confirmation";
+        (t.history = t.history || []).push(`Day ${s.day}: executive reports it is fixed on site, waiting for the merchant to confirm`);
+        ev(s, "fixed_on_site", id, `Ticket ${t.id}: executive reports fixed on site, waiting for merchant confirmation`);
       } else if (b.type === "loan_link") { sh.loan.interested = true; sh.loan.link_sent = true; }
       else if (b.type === "revisit") { sh.promise_due = { text: String(b.promise || "Confirm replacement delivery").slice(0, 120), due_day: s.day + 1 }; }
       else if (b.type === "crm_entry") { sh.last_visit = `Day ${s.day}: ${String(b.summary || "").slice(0, 300)}`; }
@@ -135,7 +140,7 @@ module.exports = async (req, res) => {
       const t = sh && sh.open_ticket;
       if (!t || t.status !== "awaiting_merchant_confirmation") return res.status(400).json({ error: "nothing awaiting confirmation" });
       if (b.positive) {
-        const evidence = { ticket: t.id, ticket_state: "delivered", merchant_reply: "Yes, the speaker works", closed_on_day: s.day, approved_by: "Sales Head", proofs: (t.proofs || []).slice(-2).map((p) => ({ kind: p.kind, name: p.name, thumb: p.thumb })) };
+        const evidence = { ticket: t.id, ticket_state: t.fixed_on_site ? "fixed on site" : "delivered", merchant_reply: "Yes, the speaker works", closed_on_day: s.day, approved_by: t.fixed_on_site ? "Executive, fixed on site" : "Sales Head", proofs: (t.proofs || []).slice(-2).map((p) => ({ kind: p.kind, name: p.name, thumb: p.thumb })) };
         s.closed.push({ id: t.id, shop: sh.id, shopName: sh.name, issue: t.issue, evidence });
         sh.status = "resolved"; sh.promise_due = null; sh.open_ticket = null;
         ev(s, "ticket_closed", sh.id, `Ticket ${t.id} CLOSED with evidence: delivered + merchant confirmed`);
