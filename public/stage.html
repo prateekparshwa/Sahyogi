@@ -1,0 +1,28 @@
+<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sahyogi demo stage</title>
+<style>
+:root{--bg:#e9edf2;--ink:#17202a;--mute:#5f6b78}
+@media (prefers-color-scheme:dark){:root{--bg:#0b0f14;--ink:#e6ecf2;--mute:#97a4b2}}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font:14px/1.4 system-ui,sans-serif;display:flex;flex-direction:column}
+.bar{display:flex;align-items:center;gap:12px;padding:10px 20px;font-weight:700}
+.bar small{color:var(--mute);font-weight:500}
+.stage{flex:1;min-height:0;display:flex;gap:28px;align-items:center;justify-content:center;padding:0 20px 20px}
+.phone{height:min(100%,820px);aspect-ratio:9/18.5;border-radius:42px;background:#111;padding:12px;box-shadow:0 20px 50px rgba(0,0,0,.35);flex:none}
+.phone iframe{width:100%;height:100%;border:0;border-radius:32px;background:#fff}
+.win{flex:1;max-width:1000px;height:min(100%,820px);border-radius:12px;overflow:hidden;background:#fff;box-shadow:0 20px 50px rgba(0,0,0,.3);display:flex;flex-direction:column}
+.chrome{display:flex;align-items:center;gap:8px;padding:10px 14px;background:#dfe3e8;color:#333}
+.dot{width:12px;height:12px;border-radius:50%;background:#f25f58}.dot:nth-child(2){background:#fbbe3c}.dot:nth-child(3){background:#58cb42}
+.url{flex:1;margin-left:10px;background:#fff;border-radius:6px;padding:4px 10px;font-size:12px;color:#555}
+.win iframe{flex:1;width:100%;border:0}
+@media (max-width:900px){.stage{flex-direction:column;overflow:auto;align-items:center}.phone{height:760px}.win{width:100%;height:700px;flex:none}}
+</style></head><body>
+<div class="bar">Sahyogi <small>left: field executive on the phone · right: Paytm CRM, updating live</small></div>
+<div class="stage">
+  <div class="phone"><iframe src="/" allow="microphone; autoplay" title="Sahyogi app"></iframe></div>
+  <div class="win">
+    <div class="chrome"><span class="dot"></span><span class="dot"></span><span class="dot"></span><span class="url">crm.paytm-demo.internal (mock)</span></div>
+    <iframe src="/crm.html" title="Mock CRM"></iframe>
+  </div>
+</div>
+</body></html>
