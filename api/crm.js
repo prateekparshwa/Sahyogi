@@ -50,15 +50,50 @@ module.exports = async (req, res) => {
       if (s.outage) { s.rejected++; ev(s, "write_rejected", id, "Write rejected, CRM unavailable: " + (b.label || key)); await save(s); return res.status(503).json({ error: "CRM unavailable" }); }
       const t = sh.open_ticket;
       if (b.type === "ticket_update") {
-        if (t) { t.status = "replacement_scheduled"; (t.history = t.history || []).push(`Day ${s.day}: replacement approved by executive (via Sahyogi)`); }
-        else sh.open_ticket = { id: "T-" + (1100 + Object.keys(s.actions).length), issue: "Device issue", opened_days_ago: 0, status: "replacement_scheduled" };
-        sh.status = "replacement_scheduled";
-      } else if (b.type === "loan_link") { sh.loan.interested = true; }
+        const prop = { text: String(b.label || "Replacement").slice(0, 160), day: s.day, at: new Date().toISOString() };
+        const note = `Day ${s.day}: replacement proposed by executive, waiting for Sales Head`;
+        if (t) { t.status = "pending_approval"; t.proposal = prop; delete t.denied; (t.history = t.history || []).push(note); }
+        else sh.open_ticket = { id: "T-" + (1100 + Object.keys(s.actions).length), issue: "Device issue", opened_days_ago: 0, status: "pending_approval", proposal: prop, history: [note] };
+        sh.status = "pending_approval";
+        ev(s, "approval_requested", id, `Replacement for ${sh.open_ticket.id} sent to the Sales Head for approval`);
+      } else if (b.type === "loan_link") { sh.loan.interested = true; sh.loan.link_sent = true; }
       else if (b.type === "revisit") { sh.promise_due = { text: String(b.promise || "Confirm replacement delivery").slice(0, 120), due_day: s.day + 1 }; }
       else if (b.type === "crm_entry") { sh.last_visit = `Day ${s.day}: ${String(b.summary || "").slice(0, 300)}`; }
-      s.actions[key] = { state: "done", shop: id }; s.writes++;
+      sh.updated_at = new Date().toISOString(); s.actions[key] = { state: "done", shop: id }; s.writes++;
       ev(s, "write_ok", id, "Sahyogi: " + (b.label || b.type));
       await save(s); return res.status(200).json({ state: "done", shop: sh, day: s.day });
+    }
+
+    if (op === "decide") {
+      const sh = s.shops[String(b.shop)], t = sh && sh.open_ticket;
+      if (!t || t.status !== "pending_approval") return res.status(400).json({ error: "nothing awaiting approval" });
+      sh.updated_at = new Date().toISOString();
+      if (b.accept) {
+        t.status = "replacement_scheduled"; sh.status = "replacement_scheduled"; delete t.denied;
+        (t.history = t.history || []).push(`Day ${s.day}: replacement approved by Sales Head`);
+        ev(s, "approved", sh.id, `Sales Head APPROVED the replacement for ${t.id}`);
+      } else {
+        const reason = String(b.reason || "No reason given").slice(0, 160);
+        t.status = "open"; sh.status = "open"; t.denied = { reason, day: s.day };
+        (t.history = t.history || []).push(`Day ${s.day}: replacement denied by Sales Head (${reason})`);
+        ev(s, "denied", sh.id, `Sales Head DENIED the replacement for ${t.id}: ${reason}`);
+      }
+      await save(s); return res.status(200).json({ ok: true, shop: sh, day: s.day });
+    }
+
+    if (op === "proof") {
+      const id = String(b.shop), sh = s.shops[id], t = sh && sh.open_ticket;
+      if (s.outage) { s.rejected++; ev(s, "write_rejected", id, "Proof upload rejected, CRM unavailable"); await save(s); return res.status(503).json({ error: "CRM unavailable" }); }
+      if (!t) return res.status(400).json({ error: "no open ticket for this merchant" });
+      const thumb = String(b.thumb || "");
+      if (thumb.length > 90000) return res.status(413).json({ error: "image too large" });
+      const kind = b.kind === "video" ? "video" : "photo";
+      t.proofs = (t.proofs || []).slice(-2);
+      t.proofs.push({ kind, name: String(b.name || kind).slice(0, 80), size: Number(b.size) || 0, thumb, day: s.day, at: new Date().toISOString() });
+      (t.history = t.history || []).push(`Day ${s.day}: ${kind} proof added by executive`);
+      sh.updated_at = new Date().toISOString(); s.writes++;
+      ev(s, "proof_added", id, `Executive added ${kind} proof to ${t.id}`);
+      await save(s); return res.status(200).json({ ok: true, shop: sh, day: s.day });
     }
 
     if (op === "nextday") {
@@ -80,7 +115,7 @@ module.exports = async (req, res) => {
       const t = sh && sh.open_ticket;
       if (!t || t.status !== "awaiting_merchant_confirmation") return res.status(400).json({ error: "nothing awaiting confirmation" });
       if (b.positive) {
-        const evidence = { ticket: t.id, ticket_state: "delivered", merchant_reply: "Yes, the speaker works", closed_on_day: s.day };
+        const evidence = { ticket: t.id, ticket_state: "delivered", merchant_reply: "Yes, the speaker works", closed_on_day: s.day, approved_by: "Sales Head", proofs: (t.proofs || []).slice(-2).map((p) => ({ kind: p.kind, name: p.name, thumb: p.thumb })) };
         s.closed.push({ id: t.id, shop: sh.id, shopName: sh.name, issue: t.issue, evidence });
         sh.status = "resolved"; sh.promise_due = null; sh.open_ticket = null;
         ev(s, "ticket_closed", sh.id, `Ticket ${t.id} CLOSED with evidence: delivered + merchant confirmed`);
