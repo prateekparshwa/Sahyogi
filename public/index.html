@@ -904,7 +904,7 @@ function execute(id,act,ex){const s=S.shops[id],key=act.key;
  else if(act.type==="ticket_resolved"){if(t){t.status="closure_review";t.review={suggestion:"close",reason:`The executive's visit note says the problem is fixed${ex.note?`: "${ex.note}"`:""}.`};(t.history=t.history||[]).push(`Day ${S.day}: visit note says fixed, waiting for the Area Manager`);s.status="closure_review"}}
  else if(act.type==="loan_link")s.loan.interested=true;
  else if(act.type==="revisit")s.promise_due={text:act.promise||"Confirm replacement delivery",due_day:S.day+1};
- else if(act.type==="crm_entry")s.last_visit=`Day ${S.day}: ${ex.summary}`;
+ else if(act.type==="crm_entry"){s.last_visit=`Day ${S.day}: ${ex.summary}`;s.last_visit_spoken=(ex.note||"").slice(0,300)}
  S.actions[key]={state:"done",act,shop:id};const i=S.pending.indexOf(key);if(i>=0)S.pending.splice(i,1);
  if(!S.visited.includes(id))S.visited.push(id);log("action_done",act.label,id);return{key,state:"done",label:act.label}}
 // ---- views
@@ -921,7 +921,7 @@ function shopHTML(id){const s=S.shops[id],[p,w]=score(s),t=s.open_ticket,u=ui[id
  const dev=s.device.status==="online"?`${s.device.model}: online`:`${s.device.model}: ${s.device.status.replace(/_/g," ")}`;
  let h=`<button class="back" data-back>← All shops</button><div class="card"><b style="font-size:19px">${esc(s.name)}</b><div class="sub">${esc(s.owner)} · ${esc(s.area)} · ${esc(s.phone_masked)}</div><a class="mapbtn" href="${mapURL(s)}" target="_blank" rel="noopener">${PIN} Directions to this shop</a>
  <div class="grid"><div class="tile ${d>=25?"bad":""}"><i>Payments vs last week</i><b>${d>0?"-"+d:"+"+Math.abs(d)}%</b></div><div class="tile"><i>Device</i><b>${esc(dev)}</b></div><div class="tile"><i>Ticket</i><b>${t?esc(t.id)+" ("+esc(t.status.replace(/_/g," "))+")":"None"}</b></div><div class="tile"><i>Loan</i><b>${s.loan.eligible?(s.loan.interested?"Interested":"Eligible"):"Not eligible"}</b></div></div>
- ${w.length?`<b class="sub">Why this shop</b><ul class="why">${w.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}<div class="sub" style="margin-top:8px">Last visit: ${esc(dd(s.last_visit))}</div></div>`;
+ ${w.length?`<b class="sub">Why this shop</b><ul class="why">${w.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}<div class="sub" style="margin-top:8px">Last visit: ${esc(dd(s.last_visit))}</div>${s.last_visit_spoken?`<div class="sub"><b>As spoken:</b> ${esc(s.last_visit_spoken)}</div>`:""}</div>`;
  if(t&&t.delivered&&t.status==="replacement_scheduled")h+=`<div class="note" style="background:var(--ok-bg)"><b>Replacement delivered.</b> Check it on this visit. If it works, say so in your note and Sahyogi sends the ticket to the Area Manager to close.</div>`;
  {const cl=!t&&feed.find(e=>e.shop===id&&e.kind==="ticket_closed");if(cl)h+=`<div class="note" style="background:var(--ok-bg)"><b>Ticket closed.</b> ${esc(cl.msg)}</div>`}
  if(t&&t.status==="pending_approval")h+=`<div class="note" style="background:var(--warn-bg)"><b>Waiting for the Sales Head.</b> ${esc((t.proposal||{}).text||"")}<div class="sub">The replacement is not scheduled until the Sales Head accepts it in the CRM.</div></div>`;
