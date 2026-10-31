@@ -59,21 +59,21 @@ body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 #tabs button.on{color:var(--brand)}
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s}}
 @media (max-width:480px){h1 small{display:none}.chip{font-size:11px;padding:3px 8px}header{gap:6px}}
-#login{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding:24px 20px 28px;background:#06222b url(/login-bg.webp) center top/cover no-repeat;color:#fff;font:15px/1.4 system-ui,sans-serif}
-#login::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,24,32,.15) 0%,rgba(4,24,32,.35) 45%,rgba(4,24,32,.92) 100%)}
+#login{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;justify-content:space-between;align-items:center;padding:28px 20px 20px;background:url(/login-bg.webp) center -14vh/100% auto no-repeat #06222b;color:#fff;font:15px/1.4 system-ui,sans-serif}
+#login::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,24,32,.55) 0%,rgba(4,24,32,0) 22%,rgba(4,24,32,0) 52%,rgba(4,24,32,.88) 78%,#041820 100%)}
 #login[hidden]{display:none}
-#login .lw{position:relative;width:100%;max-width:380px}
-#login h1{margin:0;font-size:32px;letter-spacing:.2px}
-#login .tag{margin:2px 0 16px;color:#cfe3e0;font-size:14px}
-#login form{background:rgba(10,32,40,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:16px}
-#login label{display:block;font-size:12px;color:#b9d2cf;margin:0 0 4px}
-#login input{width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;font-size:16px;margin-bottom:12px}
+#login .top,#login .lw{position:relative;width:100%;max-width:380px}
+#login h1{margin:0;font-size:30px;letter-spacing:.2px;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+#login .tag{margin:2px 0 0;color:#e3f0ee;font-size:14px;text-shadow:0 1px 8px rgba(0,0,0,.7)}
+#login form{background:rgba(6,26,34,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);border:1px solid rgba(255,255,255,.16);border-radius:14px;padding:12px}
+#login label{display:block;font-size:12px;color:#b9d2cf;margin:0 0 3px}
+#login input{width:100%;box-sizing:border-box;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;font-size:16px;margin-bottom:8px}
 #login input:focus{outline:2px solid #3fbf9f;outline-offset:1px}
-#login button{width:100%;padding:13px;border:0;border-radius:10px;background:#3fbf9f;color:#06231b;font-size:16px;font-weight:700;cursor:pointer}
-#login .err{min-height:18px;color:#ffb4ab;font-size:13px;margin:-4px 0 8px}
-#login .foot{margin-top:14px;text-align:center;font-size:12px;color:#a9c4c0}
+#login button{width:100%;padding:12px;border:0;border-radius:10px;background:#3fbf9f;color:#06231b;font-size:16px;font-weight:700;cursor:pointer}
+#login .err{min-height:16px;color:#ffb4ab;font-size:13px;margin:-2px 0 6px}
+#login .foot{margin-top:10px;text-align:center;font-size:12px;color:#a9c4c0}
 </style>
-</head><body><div id="login" hidden><div class="lw"><h1>Sahyogi</h1><div class="tag">AI teammate for Paytm field executives</div>
+</head><body><div id="login" hidden><div class="top"><h1>Sahyogi</h1><div class="tag">AI teammate for Paytm field executives</div></div><div class="lw">
 <form id="lf" autocomplete="on"><label for="lu">Username</label><input id="lu" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required>
 <label for="lp">Password</label><input id="lp" name="password" type="password" autocomplete="current-password" required>
 <div class="err" id="le" role="alert"></div><button type="submit">Sign in</button></form>
