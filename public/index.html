@@ -987,7 +987,7 @@ async function toggleMic(u){if(rec){rec.stop();return}
   rec.ondataavailable=e=>recChunks.push(e.data);
   rec.onstop=async()=>{st.getTracks().forEach(x=>x.stop());const type=(rec.mimeType||"audio/webm").split(";")[0];rec=null;u.micMsg="Transcribing with Sarvam...";render();
    try{const r=await fetch("/api/stt?lang=unknown",{method:"POST",headers:{"content-type":type},body:new Blob(recChunks,{type})});if(!r.ok)throw new Error("HTTP "+r.status);const j=await r.json();
-    u.seq=(u.seq||0)+1;u.note=((u.note?u.note+" ":"")+(j.text||"")).trim();u.ex=null;u.res=null;u.micMsg=j.text?"Transcribed by Sarvam. Check the text, then continue.":"Heard nothing. Try again or use a sample.";log("stt","Voice note transcribed by Sarvam")}
+    u.seq=(u.seq||0)+1;u.note=((u.note?u.note+" ":"")+(j.text||"")).trim();u.ex=null;u.res=null;u.micMsg=j.text?"Transcribed by Sarvam"+(j.detected?" (heard "+({"kn-IN":"Kannada","hi-IN":"Hindi","en-IN":"English"}[j.detected]||j.detected)+")":"")+". Check the text, then continue.":"Heard nothing. Try again or use a sample.";log("stt","Voice note transcribed by Sarvam")}
    catch(e){u.micMsg="Could not transcribe. Type the note or use a sample."}render()};
   rec.start();u.micMsg="Recording... tap again to stop.";render()}
  catch(e){u.micMsg="Microphone blocked. Allow it in the browser, or type the note.";render()}}
