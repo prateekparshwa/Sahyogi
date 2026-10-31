@@ -973,9 +973,11 @@ function bind(){const sn=document.querySelector("[data-seen]");if(sn)sn.onclick=
  const cl=document.querySelector("[data-clar]");if(cl)cl.onclick=async()=>{const a=(($("clar")||{}).value||"").trim();if(a.length<2)return;u.note=(u.note||"")+" The merchant wants: "+a;if(ge)await ge.onclick()};
  const ap=document.querySelector("[data-approve]");if(ap)ap.onclick=async()=>{ap.disabled=true;u.res=[];for(const a of propose(s,u.ex.ex)){if(u.skip&&u.skip[a.key])continue;u.res.push(await executeAny(id,a,u.ex.ex))}render()};
  }
-async function speak(u){const l=u.lang;u.speakMsg="Generating voice...";render();
- try{if(!sarvamOn)throw new Error("offline");const r=await fetch("/api/tts",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({text:u.brief.text,lang:l})});if(!r.ok)throw new Error("HTTP "+r.status);
-  const au=new Audio(URL.createObjectURL(await r.blob()));await au.play();u.speakMsg="Sarvam voice";log("tts","Sarvam voice played ("+l+")",view)}
+const ttsCache=new Map();let curAu=null;
+async function speak(u){const l=u.lang,key=l+"|"+u.brief.text;const cached=ttsCache.get(key);u.speakMsg=cached?"Playing saved voice...":"Generating voice...";render();
+ try{if(curAu){curAu.pause();curAu=null}if(window.speechSynthesis)speechSynthesis.cancel();let url=cached;if(!url){if(!sarvamOn)throw new Error("offline");const r=await fetch("/api/tts",{method:"POST",headers:{"content-type":"application/json"},body:JSON.stringify({text:u.brief.text,lang:l})});if(!r.ok)throw new Error("HTTP "+r.status);
+  url=URL.createObjectURL(await r.blob());ttsCache.set(key,url)}
+  const au=new Audio(url);curAu=au;await au.play();u.speakMsg=cached?"Sarvam voice (replayed, no new call)":"Sarvam voice";log("tts",(cached?"Sarvam voice replayed from saved audio (":"Sarvam voice played (")+l+")",view)}
  catch(e){const v="speechSynthesis" in window&&speechSynthesis.getVoices().find(x=>x.lang.toLowerCase().startsWith(l));
   if(v){const m=new SpeechSynthesisUtterance(u.brief.text);m.lang=VOICE[l];m.voice=v;speechSynthesis.cancel();speechSynthesis.speak(m);u.speakMsg="Device voice (Sarvam unavailable)"}
   else u.speakMsg="Voice unavailable right now. Read the brief on screen."}
