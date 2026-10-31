@@ -14,14 +14,14 @@ module.exports = async (req, res) => {
     const fd = new FormData();
     fd.append("file", new Blob([buf], { type }), "note.webm");
     fd.append("model", process.env.SARVAM_STT_MODEL || "saaras:v4");
-    fd.append("mode", process.env.SARVAM_STT_MODE || "codemix");
+    fd.append("mode", "codemix");
     fd.append("language_code", lang);
     const r = await fetch("https://api.sarvam.ai/speech-to-text", {
       method: "POST", headers: { "api-subscription-key": key }, body: fd,
     });
     if (!r.ok) return res.status(502).json({ error: "Sarvam stt " + r.status });
     const j = await r.json();
-    return res.status(200).json({ text: j.transcript || "" });
+    return res.status(200).json({ text: j.transcript || "", detected: j.language_code || "" });
   } catch (e) {
     return res.status(502).json({ error: "Sarvam stt failed" });
   }
