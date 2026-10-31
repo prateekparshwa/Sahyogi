@@ -59,8 +59,34 @@ body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 #tabs button.on{color:var(--brand)}
 @media (prefers-reduced-motion:no-preference){.card{transition:border-color .15s}}
 @media (max-width:480px){h1 small{display:none}.chip{font-size:11px;padding:3px 8px}header{gap:6px}}
+#login{position:fixed;inset:0;z-index:300;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;padding:24px 20px 28px;background:#06222b url(/login-bg.webp) center top/cover no-repeat;color:#fff;font:15px/1.4 system-ui,sans-serif}
+#login::before{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(4,24,32,.15) 0%,rgba(4,24,32,.35) 45%,rgba(4,24,32,.92) 100%)}
+#login[hidden]{display:none}
+#login .lw{position:relative;width:100%;max-width:380px}
+#login h1{margin:0;font-size:32px;letter-spacing:.2px}
+#login .tag{margin:2px 0 16px;color:#cfe3e0;font-size:14px}
+#login form{background:rgba(10,32,40,.72);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:16px}
+#login label{display:block;font-size:12px;color:#b9d2cf;margin:0 0 4px}
+#login input{width:100%;box-sizing:border-box;padding:12px;border-radius:10px;border:1px solid rgba(255,255,255,.25);background:rgba(255,255,255,.1);color:#fff;font-size:16px;margin-bottom:12px}
+#login input:focus{outline:2px solid #3fbf9f;outline-offset:1px}
+#login button{width:100%;padding:13px;border:0;border-radius:10px;background:#3fbf9f;color:#06231b;font-size:16px;font-weight:700;cursor:pointer}
+#login .err{min-height:18px;color:#ffb4ab;font-size:13px;margin:-4px 0 8px}
+#login .foot{margin-top:14px;text-align:center;font-size:12px;color:#a9c4c0}
 </style>
-</head><body><div class="wrap">
+</head><body><div id="login" hidden><div class="lw"><h1>Sahyogi</h1><div class="tag">AI teammate for Paytm field executives</div>
+<form id="lf" autocomplete="on"><label for="lu">Username</label><input id="lu" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+<label for="lp">Password</label><input id="lp" name="password" type="password" autocomplete="current-password" required>
+<div class="err" id="le" role="alert"></div><button type="submit">Sign in</button></form>
+<div class="foot">Team Sahyogi &middot; Paytm Build for India AI Hackathon</div></div></div>
+<script>(function(){var L=document.getElementById("login"),K="sahyogi_auth";
+function ok(){try{return sessionStorage.getItem(K)==="1"}catch(e){return window.__auth===1}}
+function show(){L.hidden=false;setTimeout(function(){var u=document.getElementById("lu");if(u)u.focus()},50)}
+if(!ok())show();
+document.getElementById("lf").onsubmit=function(e){e.preventDefault();var u=document.getElementById("lu").value.trim().toLowerCase(),p=document.getElementById("lp").value;
+if(u==="prateek"&&p==="prateek"){try{sessionStorage.setItem(K,"1")}catch(x){window.__auth=1}L.hidden=true;document.getElementById("lp").value="";document.getElementById("le").textContent=""}
+else{document.getElementById("le").textContent="Wrong username or password.";document.getElementById("lp").value="";document.getElementById("lp").focus()}};
+window.sahyogiLogout=function(){try{sessionStorage.removeItem(K)}catch(x){}window.__auth=0;document.getElementById("lu").value="";show()}})();</script>
+<div class="wrap">
 <header><h1>Sahyogi<small>AI teammate for Paytm field executives</small></h1><span class="chip" id="day"></span><span class="chip" id="crm" hidden></span><span class="chip" id="mode"></span></header>
 <main id="app"></main>
 </div>
@@ -957,9 +983,9 @@ function sheet(html){const s=$("sheet");s.innerHTML=`<div class="in">${html}</di
 function closeSheet(){$("sheet").hidden=true}
 function menu(){sheet(`<b>Demo controls</b>
  <label class="toggle"><input type="checkbox" id="aiT" ${useAI?"checked":""} ${sarvamOn?"":"disabled"}> Use Sarvam for language and notes ${sarvamOn?"":"(offline: server key not set)"}</label>
- <button data-x="next">Next day (simulate)</button><button data-x="outage">${S.outage?"Restore CRM":"Simulate CRM outage"}</button><button data-x="retry">Retry pending updates (${S.pending.length})</button><button data-x="digest">Manager digest</button>${crmOn?`<button data-x="crm">Open mock CRM screen</button>`:""}<button data-x="audit">Audit log</button><button data-x="reset">Reset demo</button><button data-x="close">Close</button>`);
+ <button data-x="next">Next day (simulate)</button><button data-x="outage">${S.outage?"Restore CRM":"Simulate CRM outage"}</button><button data-x="retry">Retry pending updates (${S.pending.length})</button><button data-x="digest">Manager digest</button>${crmOn?`<button data-x="crm">Open mock CRM screen</button>`:""}<button data-x="audit">Audit log</button><button data-x="reset">Reset demo</button><button data-x="logout">Sign out</button><button data-x="close">Close</button>`);
  const t=$("aiT");if(t)t.onchange=()=>{useAI=t.checked;renderHead()}}
-async function menuAction(x){if(x==="close")return closeSheet();
+async function menuAction(x){if(x==="close")return closeSheet();if(x==="logout"){closeSheet();return window.sahyogiLogout()}
  if(x==="crm"){window.open("/crm.html","_blank");return}
  if(x==="next"){const n=await nextDay();closeSheet();render();sheet(`<b>${esc(dateLabel(S.day))}</b><div>${n?`${n} ticket(s) show a delivered replacement. Open the shop and ask the merchant to confirm.`:"No tickets changed."}</div><button data-x="close">OK</button>`)}
  else if(x==="outage"){await setOutage(!S.outage);closeSheet();render()}
