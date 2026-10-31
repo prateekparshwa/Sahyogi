@@ -72,6 +72,13 @@ body{padding-bottom:calc(84px + env(safe-area-inset-bottom,0px))}
 #login button{width:100%;padding:12px;border:0;border-radius:10px;background:#3fbf9f;color:#06231b;font-size:16px;font-weight:700;cursor:pointer}
 #login .err{min-height:16px;color:#ffb4ab;font-size:13px;margin:-2px 0 6px}
 #login .foot{margin-top:10px;text-align:center;font-size:12px;color:#a9c4c0}
+@media (min-width:760px){
+#login{display:grid;grid-template-columns:1fr minmax(320px,380px) 7vw;grid-template-areas:". top ." ". form .";align-content:center;padding:24px;background:url(/login-bg-wide.webp) center/cover no-repeat #041820}
+#login::before{background:linear-gradient(90deg,rgba(4,24,32,0) 50%,rgba(4,24,32,.55) 100%)}
+#login .top{grid-area:top;align-self:end;margin-bottom:16px}
+#login .lw{grid-area:form;align-self:start}
+#login h1{font-size:40px}
+}
 </style>
 </head><body><div id="login" hidden><div class="top"><h1>Sahyogi</h1><div class="tag">AI teammate for Paytm field executives</div></div><div class="lw">
 <form id="lf" autocomplete="on"><label for="lu">Username</label><input id="lu" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required>
