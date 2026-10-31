@@ -58,14 +58,14 @@ module.exports = async (req, res) => {
         ev(s, "approval_requested", id, `Replacement for ${sh.open_ticket.id} sent to the Sales Head for approval`);
       } else if (b.type === "ticket_resolved") {
         if (!t) { await save(s); return res.status(400).json({ error: "no open ticket to resolve" }); }
-        const quote = String(b.note || b.summary || "").trim().slice(0, 240);
+        const spoken = String(b.note || "").trim().slice(0, 240), quote = String(b.summary || b.note || "").trim().slice(0, 240);
         t.status = "closure_review"; sh.status = "closure_review";
-        t.review = { suggestion: "close", reason: (t.delivered ? "Ticket system shows the replacement delivered. " : "") + `The executive's visit note says the problem is fixed${quote ? ': "' + quote + '"' : ""}.`, day: s.day, at: new Date().toISOString() };
+        t.review = { suggestion: "close", reason: (t.delivered ? "Ticket system shows the replacement delivered. " : "") + `The executive's visit note says the problem is fixed${quote ? ': "' + quote + '"' : ""}.`, spoken, day: s.day, at: new Date().toISOString() };
         (t.history = t.history || []).push(`Day ${s.day}: visit note says it is fixed, AI suggests closing, waiting for the Area Manager`);
         ev(s, "closure_requested", id, `Ticket ${t.id}: visit note says fixed. AI suggests closing. Sent to the Area Manager`);
       } else if (b.type === "loan_link") { sh.loan.interested = true; sh.loan.link_sent = true; }
       else if (b.type === "revisit") { sh.promise_due = { text: String(b.promise || "Confirm replacement delivery").slice(0, 120), due_day: s.day + 1 }; }
-      else if (b.type === "crm_entry") { sh.last_visit = `Day ${s.day}: ${String(b.summary || "").slice(0, 300)}`; }
+      else if (b.type === "crm_entry") { sh.last_visit = `Day ${s.day}: ${String(b.summary || "").slice(0, 300)}`; sh.last_visit_spoken = String(b.note || "").trim().slice(0, 300); }
       sh.updated_at = new Date().toISOString(); s.actions[key] = { state: "done", shop: id }; s.writes++;
       ev(s, "write_ok", id, "Sahyogi: " + (b.label || b.type));
       await save(s); return res.status(200).json({ state: "done", shop: sh, day: s.day });
