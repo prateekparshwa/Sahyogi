@@ -855,7 +855,7 @@ function offlineBrief(s,l){const t=s.open_ticket;
  if(!t){return{en:`${s.name}: nothing urgent. Payments are steady. Ask how the device is working.`,hi:`${s.name}: कोई जरूरी मुद्दा नहीं। पेमेंट स्थिर है। डिवाइस के बारे में पूछिए।`,kn:`${s.name}: ತುರ್ತು ಸಮಸ್ಯೆ ಇಲ್ಲ. ಪಾವತಿ ಸ್ಥಿರವಾಗಿದೆ. ಸಾಧನ ಹೇಗಿದೆ ಎಂದು ಕೇಳಿ.`}[l]}
  const pr=(s.promise_due||{}).text||"an update";
  return OB[l].replace("{shop}",s.name).replace("{issue}",loc(t.issue,l)).replace("{days}",t.opened_days_ago).replace("{drop}",Math.max(drop(s),0)).replace("{promise}",loc(pr,l)).replace("{loan}",s.loan.eligible?LB[l]:"")}
-const FIXED=["is fixed","got fixed","fixed it","fixed now","is working now","working now","works now","is resolved","resolved","working fine","works fine","is working","delivered and working","installed","ठीक हो गया","ठीक हो गई","अब चल","ಸರಿಯಾಯಿತು","ಸರಿಯಾಗಿದೆ","ಈಗ ಕೆಲಸ"];
+const FIXED=["is fixed","got fixed","fixed it","fixed now","is working now","working now","works now","is resolved","resolved","working fine","works fine","is working","delivered and working","installed","delivered","replacement done","replacement is done","been replaced","is replaced","was replaced","बदल दिया","पहुंच गया","ठीक हो गया","ठीक हो गई","अब चल","ಸರಿಯಾಯಿತು","ಸರಿಯಾಗಿದೆ","ಈಗ ಕೆಲಸ"];
 const KW={replacement:["replace","new speaker","new one","बदल","रिप्लेस","नया","ಬದಲ","ರಿಪ್ಲೇಸ್","ಹೊಸ"],repair:["repair","fix","ठीक","ಸರಿ"],loan_info:["loan","लोन","कर्ज","ಸಾಲ","ಲೋನ್"],upgrade:["upgrade","card machine","अपग्रेड","ಅಪ್‌ಗ್ರೇಡ್"]};
 const DET={resolved:"The problem was fixed during the visit",replacement:"Merchant wants a replacement device",repair:"Merchant wants the device repaired",loan_info:"Merchant asked about a loan",upgrade:"Merchant interested in an upgrade"};
 const WHEN=[["tomorrow","tomorrow"],["friday","Friday"],["monday","Monday"],["next week","next week"],["कल","tomorrow"],["ನಾಳೆ","tomorrow"]];
@@ -882,7 +882,7 @@ Facts: ${JSON.stringify(facts(s))}`;
 async function extract(note,s){const t=s.open_ticket;
  const p=`You turn an executive's spoken visit note into structured facts for a CRM. Return ONLY valid JSON of this shape:
 {"summary":"one sentence in English","requests":[{"type":"replacement|repair|resolved|loan_info|upgrade|callback|other","detail":"string"}],"follow_up":{"needed":true,"when":"string or null"},"needs_clarification":false,"question":"ask ONE short question if the note is unclear, else null"}
-Rules: use type "resolved" when the note says the existing problem is fixed, or the delivered replacement works now (do NOT also add "repair" or "replacement" for that). If the note says it still does not work, do not use "resolved". use only what the note says. Do not guess the merchant's intent. If the note does not say what the merchant wants, set needs_clarification true and ask one question. The note may be in English, Hindi or Kannada. Answer in English JSON.
+Rules: use type "resolved" when the note says the existing problem is fixed, or the replacement has been delivered, installed, done or works now (do NOT also add "repair" or "replacement" for that; "replacement" is only for a merchant ASKING for a new device that has not been given yet). If the note says it still does not work, do not use "resolved". use only what the note says. Do not guess the merchant's intent. If the note does not say what the merchant wants, set needs_clarification true and ask one question. The note may be in English, Hindi or Kannada. Answer in English JSON.
 Shop: ${s.name} (open ticket: ${t?t.issue:"none"})
 Note: """${note}"""`;
  const raw=await ask(p,"extract");
@@ -890,7 +890,7 @@ Note: """${note}"""`;
  return{ex:offlineExtract(note),src:"Offline rules"}}
 const Q=s=>(ui[s.id]&&ui[s.id].seq)||0;
 function propose(s,ex){const a=[],t=s.open_ticket,k=new Set(ex.requests.map(r=>r.type));
- if(k.has("resolved")&&t)a.push({key:`${s.id}:resolved:${t.id}:${Q(s)}`,type:"ticket_resolved",label:`Send ticket ${t.id} to the Area Manager to close (visit note says it is fixed)`,needs_approval:false});
+ if(k.has("resolved")&&t)a.push({key:`${s.id}:resolved:${t.id}:${Q(s)}`,type:"ticket_resolved",label:`Replacement done. Send ticket ${t.id} to the Area Manager to close`,needs_approval:false});
  else if(k.has("replacement")||k.has("repair"))a.push({key:`${s.id}:ticket:${t?t.id:"new"}:${Q(s)}`,type:"ticket_update",label:t?`Update existing ticket ${t.id}: replacement requested`:"Open a new ticket: replacement requested",needs_approval:true});
  if(k.has("loan_info")){if(s.loan.eligible)a.push({key:`${s.id}:loan_link:${Q(s)}`,type:"loan_link",label:"Send the loan information link to the merchant (SMS)",needs_approval:true});
   else a.push({key:`${s.id}:loan_blocked`,type:"blocked",label:"Merchant asked about a loan, but is not eligible. No link will be sent.",needs_approval:false})}
